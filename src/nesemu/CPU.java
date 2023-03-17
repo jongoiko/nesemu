@@ -508,8 +508,7 @@ public class CPU extends MemoryMapped {
 
     private void BIT() {
         final byte memoryOperand = addressSpace.readByte(operandEffectiveAddress);
-        final int result = regA & memoryOperand;
-        setFlag(StatusFlag.ZERO, result == 0);
+        setFlag(StatusFlag.ZERO, (regA & memoryOperand) == 0);
         setFlag(StatusFlag.OVERFLOW, (memoryOperand & 0x40) != 0);
         setFlag(StatusFlag.NEGATIVE, (memoryOperand & 0x80) != 0);
     }
