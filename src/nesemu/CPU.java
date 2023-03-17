@@ -98,8 +98,6 @@ public class CPU extends MemoryMapped {
     public void clockTick() {
         if (cyclesUntilNextInstruction <= 0) {
             // Check for interrupts, etc.
-            if (regPC == 0x35d9)
-                System.out.println("a");
             short prevRegPC = regPC;
             final byte opcode = readByteAtPCAndIncrement();
             final Instruction instruction = instructionLookupTable[Byte.toUnsignedInt(opcode)];
