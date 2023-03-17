@@ -13,7 +13,8 @@ public class CPU extends MemoryMapped {
     private boolean isMemoryOperand;
 
     public CPU(short startPCAddress) {
-        this.regPC = startPCAddress;
+        regPC = startPCAddress;
+        regP = (byte)0x34;
         regS = (byte)0xFF;
     }
 
