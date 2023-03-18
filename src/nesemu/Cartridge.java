@@ -5,8 +5,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 
 public class Cartridge extends MemoryMapped {
-    final static int PRG_ROM_BLOCK_SIZE = 16384;
-    final static int CHR_ROM_BLOCK_SIZE = 8192;
+    private final static int PRG_ROM_BLOCK_SIZE = 16384;
+    private final static int CHR_ROM_BLOCK_SIZE = 8192;
 
     private final byte prgROM[];
     private final byte chrROM[];
