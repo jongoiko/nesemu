@@ -16,6 +16,7 @@ public class PPU extends MemoryMapped {
     private byte regOAMDATA;
     private final TwoByteRegister regPPUSCROLL;
     private final TwoByteRegister regPPUADDR;
+    private byte regPPUDATA;
 
     public PPU() {
         patternMemory = new byte[PATTERN_TABLE_SIZE][2];
@@ -143,6 +144,9 @@ public class PPU extends MemoryMapped {
             case 4 -> {
                 return regOAMDATA;
             }
+            case 7 -> {
+                return regPPUDATA;
+            }
             default -> throw new UnsupportedOperationException("Unsupported PPU register");
         }
     }
@@ -156,6 +160,7 @@ public class PPU extends MemoryMapped {
             case 4 -> regOAMDATA = value;
             case 5 -> regPPUSCROLL.update(value);
             case 6 -> regPPUADDR.update(value);
+            case 7 -> regPPUDATA = value;
             default -> throw new UnsupportedOperationException("Unsupported PPU register");
         }
     }
