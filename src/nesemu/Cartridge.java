@@ -22,12 +22,12 @@ public class Cartridge extends MemoryMapped {
     }
 
     @Override
-    byte readByte(short address) {
+    byte readByteFromDevice(short address) {
         return prgROM[Short.toUnsignedInt(address) % prgROM.length];
     }
 
     @Override
-    void writeByte(short address, byte value) {
+    void writeByteToDevice(short address, byte value) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

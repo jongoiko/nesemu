@@ -37,12 +37,12 @@ public class CPU extends MemoryMapped {
     }
 
     @Override
-    byte readByte(short address) {
+    byte readByteFromDevice(short address) {
         return 0;
     }
 
     @Override
-    void writeByte(short address, byte value) {
+    void writeByteToDevice(short address, byte value) {
     }
 
     private enum StatusFlag {

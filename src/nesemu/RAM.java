@@ -13,12 +13,12 @@ public class RAM extends MemoryMapped {
     }
 
     @Override
-    public byte readByte(short address) {
+    public byte readByteFromDevice(short address) {
         return ram[address & 0x7FF];
     }
 
     @Override
-    public void writeByte(short address, byte value) {
+    public void writeByteToDevice(short address, byte value) {
         ram[address & 0x7FF] = value;
     }
 }

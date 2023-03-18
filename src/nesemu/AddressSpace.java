@@ -17,14 +17,14 @@ public class AddressSpace {
     public byte readByte(short address) {
         for (MemoryMapped device : devices)
             if (device.addressIsMapped(address))
-                return device.readByte(address);
+                return device.readByteFromDevice(address);
         return 0;
     }
 
     public void writeByte(short address, byte value) {
         for (MemoryMapped device : devices)
             if (device.addressIsMapped(address)) {
-                device.writeByte(address, value);
+                device.writeByteToDevice(address, value);
                 return;
             }
     }
