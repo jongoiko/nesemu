@@ -14,6 +14,8 @@ public class PPU extends MemoryMapped {
     private final PPUSTATUS regPPUSTATUS;
     private byte regOAMADDR;
     private byte regOAMDATA;
+    private final TwoByteRegister regPPUSCROLL;
+    private final TwoByteRegister regPPUADDR;
 
     public PPU() {
         patternMemory = new byte[PATTERN_TABLE_SIZE][2];
@@ -21,6 +23,8 @@ public class PPU extends MemoryMapped {
         regPPUCTRL = new PPUCTRL(0, 1, 0, 0, 8, true, false);
         regPPUMASK = new PPUMASK(false, false, false, false, false, false, false, false);
         regPPUSTATUS = new PPUSTATUS(false, false, false);
+        regPPUADDR = new TwoByteRegister((short)0);
+        regPPUSCROLL = new TwoByteRegister((short)0);
     }
 
     private class PPUCTRL {
@@ -108,6 +112,23 @@ public class PPU extends MemoryMapped {
         }
     }
 
+    private class TwoByteRegister {
+        public short twoByteValue;
+        private boolean lowerByteSet;
+
+        public TwoByteRegister(short twoByteValue) {
+            this.twoByteValue = twoByteValue;
+            this.lowerByteSet = false;
+        }
+
+        public void update(byte value) {
+            if (lowerByteSet)
+                twoByteValue |= value << 8;
+            else
+                twoByteValue = (short)(value & 0xFF);
+        }
+    }
+
     private enum PPURegister {
         PPUCTRL(0),
         PPUMASK(1),
@@ -150,6 +171,8 @@ public class PPU extends MemoryMapped {
             case 1 -> regPPUMASK.update(value);
             case 2 -> regOAMADDR = value;
             case 4 -> regOAMDATA = value;
+            case 5 -> regPPUSCROLL.update(value);
+            case 6 -> regPPUADDR.update(value);
             default -> throw new UnsupportedOperationException("Unsupported PPU register");
         }
     }
