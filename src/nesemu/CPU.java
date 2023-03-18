@@ -14,28 +14,21 @@ public class CPU extends MemoryMapped {
 
     public CPU(short startPCAddress) {
         regPC = startPCAddress;
-        regP = (byte)0x34;
-        regS = (byte)0xFF;
+        regP = (byte)0x24;
+        regS = (byte)0xFD;
     }
 
-    public void log(Instruction instruction, short pc) {
-        System.out.println(String.format("%01X ", addressSpace.readByte(pc)) +
-                String.format("%01X ", addressSpace.readByte((short)(pc + 1))) +
-                String.format("%01X ", addressSpace.readByte((short)(pc + 2))));
-        System.out.println("Instruction " + instruction.name);
-        System.out.println("PC: " + String.format("%01X", regPC));
-        System.out.println("A:  " + String.format("%01X", regA));
-        System.out.println("Y:  " + String.format("%01X", regY));
-        System.out.println("X:  " + String.format("%01X", regX));
-        System.out.println("S:  " + String.format("%01X", regS));
-        System.out.print("P:  ");
-        for (CPU.StatusFlag flag : CPU.StatusFlag.values())
-            if (getFlag(flag))
-                System.out.print(flag + " ");
-        System.out.println("");
-        System.out.println(String.format("%01X ", addressSpace.readByte((short)0xd)) +
-                String.format("%01X ", addressSpace.readByte((short)0xe)));
-        System.out.println("--------------------------------");
+    private void log(Instruction instruction, short pc) {
+        System.out.print(String.format("%04X  ", pc));
+        System.out.print(String.format("%02X ", addressSpace.readByte(pc)) +
+                 String.format("%02X ", addressSpace.readByte((short)(pc + 1))) +
+                 String.format("%02X  ", addressSpace.readByte((short)(pc + 2))));
+        System.out.print(instruction.name + "         ");
+        System.out.print("A:" + String.format("%02X", regA) + " ");
+        System.out.print("X:" + String.format("%02X", regX) + " ");
+        System.out.print("Y:" + String.format("%02X", regY) + " ");
+        System.out.print("P:" + String.format("%02X", regP) + " ");
+        System.out.println("SP:" + String.format("%02X", regS));
     }
 
     @Override
@@ -105,8 +98,8 @@ public class CPU extends MemoryMapped {
             operandEffectiveAddress = getEffectiveAddress(instruction.addressingMode,
                     opcode != 0x91);
             cyclesUntilNextInstruction += instruction.cycles;
-            instruction.operation.run();
             log(instruction, prevRegPC);
+            instruction.operation.run();
         }
         cyclesUntilNextInstruction--;
     }
@@ -147,17 +140,19 @@ public class CPU extends MemoryMapped {
                 indirectAddress = (short)Byte.toUnsignedInt(readByteAtPCAndIncrement());
                 indirectAddress += readByteAtPCAndIncrement() << 8;
                 address = (short)Byte.toUnsignedInt(addressSpace.readByte(indirectAddress));
-                address += addressSpace.readByte((short)(indirectAddress + 1)) << 8;
+                short secondByteAddress = (short)(indirectAddress & 0xFF00 |
+                        (indirectAddress + 1) & 0xFF);
+                address += addressSpace.readByte(secondByteAddress) << 8;
                 break;
             case INDIRECT_X:
                 indirectAddress = (short)((readByteAtPCAndIncrement() + regX) & 0xFF);
                 address = (short)Byte.toUnsignedInt(addressSpace.readByte(indirectAddress));
-                address += addressSpace.readByte((short)(indirectAddress + 1)) << 8;
+                address += addressSpace.readByte((short)((indirectAddress + 1) & 0xFF)) << 8;
                 break;
             case INDIRECT_Y:
                 indirectAddress = (short)Byte.toUnsignedInt(readByteAtPCAndIncrement());
                 address = (short)Byte.toUnsignedInt(addressSpace.readByte(indirectAddress));
-                address += addressSpace.readByte((short)(indirectAddress + 1)) << 8;
+                address += addressSpace.readByte((short)((indirectAddress + 1) & 0xFF)) << 8;
                 previousPage = (short)(address & 0xFF00);
                 address += (short)Byte.toUnsignedInt(regY);
                 if (indirectYCheckPageBoundary &&
@@ -200,94 +195,114 @@ public class CPU extends MemoryMapped {
         // 0-
         new Instruction("BRK", AddressingMode.IMPLIED, 7,     () -> BRK()),
         new Instruction("ORA", AddressingMode.INDIRECT_X, 6,  () -> ORA()),
-        undefinedInstruction, undefinedInstruction, undefinedInstruction,
+        undefinedInstruction,
+        new Instruction("*SLO", AddressingMode.INDIRECT_X, 8, () -> SLO()),
+        new Instruction("*NOP", AddressingMode.ZEROPAGE, 3,   () -> NOP()),
         new Instruction("ORA", AddressingMode.ZEROPAGE, 3,    () -> ORA()),
         new Instruction("ASL", AddressingMode.ZEROPAGE, 5,    () -> ASL()),
-        undefinedInstruction,
+        new Instruction("*SLO", AddressingMode.ZEROPAGE, 5,   () -> SLO()),
         new Instruction("PHP", AddressingMode.IMPLIED, 3,     () -> PHP()),
         new Instruction("ORA", AddressingMode.IMMEDIATE, 2,   () -> ORA()),
         new Instruction("ASL", AddressingMode.ACCUMULATOR, 2, () -> ASL()),
-        undefinedInstruction, undefinedInstruction,
+        new Instruction("*ANC", AddressingMode.IMMEDIATE, 2,  () -> ANC()),
+        new Instruction("*NOP", AddressingMode.ABSOLUTE, 4,   () -> NOP()),
         new Instruction("ORA", AddressingMode.ABSOLUTE, 4,    () -> ORA()),
         new Instruction("ASL", AddressingMode.ABSOLUTE, 6,    () -> ASL()),
-        undefinedInstruction,
+        new Instruction("*SLO", AddressingMode.ABSOLUTE, 6,   () -> SLO()),
         // 1-
         new Instruction("BPL", AddressingMode.RELATIVE, 2,    () -> BPL()),
         new Instruction("ORA", AddressingMode.INDIRECT_Y, 5,  () -> ORA()),
-        undefinedInstruction, undefinedInstruction, undefinedInstruction,
+        undefinedInstruction,
+        new Instruction("*SLO", AddressingMode.INDIRECT_Y, 8, () -> SLO()),
+        new Instruction("*NOP", AddressingMode.ZEROPAGE_X, 4, () -> NOP()),
         new Instruction("ORA", AddressingMode.ZEROPAGE_X, 4,  () -> ORA()),
         new Instruction("ASL", AddressingMode.ZEROPAGE_X, 6,  () -> ASL()),
-        undefinedInstruction,
+        new Instruction("*SLO", AddressingMode.ZEROPAGE_X, 6, () -> SLO()),
         new Instruction("CLC", AddressingMode.IMPLIED, 2,     () -> CLC()),
         new Instruction("ORA", AddressingMode.ABSOLUTE_Y, 4,  () -> ORA()),
-        undefinedInstruction, undefinedInstruction, undefinedInstruction,
+        new Instruction("*NOP", AddressingMode.IMPLIED, 2,    () -> NOP()),
+        new Instruction("*SLO", AddressingMode.ABSOLUTE_Y, 7, () -> SLO()),
+        new Instruction("*NOP", AddressingMode.ABSOLUTE_X, 4, () -> NOP()),
         new Instruction("ORA", AddressingMode.ABSOLUTE_X, 4,  () -> ORA()),
         new Instruction("ASL", AddressingMode.ABSOLUTE_X, 7,  () -> ASL()),
-        undefinedInstruction,
+        new Instruction("*SLO", AddressingMode.ABSOLUTE_X, 7, () -> SLO()),
         // 2-
         new Instruction("JSR", AddressingMode.ABSOLUTE, 6,    () -> JSR()),
         new Instruction("AND", AddressingMode.INDIRECT_X, 6,  () -> AND()),
-        undefinedInstruction, undefinedInstruction,
+        undefinedInstruction,
+        new Instruction("*RLA", AddressingMode.INDIRECT_X, 8, () -> RLA()),
         new Instruction("BIT", AddressingMode.ZEROPAGE, 3,    () -> BIT()),
         new Instruction("AND", AddressingMode.ZEROPAGE, 3,    () -> AND()),
         new Instruction("ROL", AddressingMode.ZEROPAGE, 5,    () -> ROL()),
-        undefinedInstruction,
+        new Instruction("*RLA", AddressingMode.ZEROPAGE, 5,   () -> RLA()),
         new Instruction("PLP", AddressingMode.IMPLIED, 4,     () -> PLP()),
         new Instruction("AND", AddressingMode.IMMEDIATE, 2,   () -> AND()),
         new Instruction("ROL", AddressingMode.ACCUMULATOR, 2, () -> ROL()),
-        undefinedInstruction,
+        new Instruction("*ANC", AddressingMode.IMMEDIATE, 2,  () -> ANC()),
         new Instruction("BIT", AddressingMode.ABSOLUTE, 4,    () -> BIT()),
         new Instruction("AND", AddressingMode.ABSOLUTE, 4,    () -> AND()),
         new Instruction("ROL", AddressingMode.ABSOLUTE, 6,    () -> ROL()),
-        undefinedInstruction,
+        new Instruction("*RLA", AddressingMode.ABSOLUTE, 6,   () -> RLA()),
         // 3-
         new Instruction("BMI", AddressingMode.RELATIVE, 2,    () -> BMI()),
         new Instruction("AND", AddressingMode.INDIRECT_Y, 5,  () -> AND()),
-        undefinedInstruction, undefinedInstruction, undefinedInstruction,
+        undefinedInstruction,
+        new Instruction("*RLA", AddressingMode.INDIRECT_Y, 8, () -> RLA()),
+        new Instruction("*NOP", AddressingMode.ZEROPAGE_X, 4, () -> NOP()),
         new Instruction("AND", AddressingMode.ZEROPAGE_X, 4,  () -> AND()),
         new Instruction("ROL", AddressingMode.ZEROPAGE_X, 6,  () -> ROL()),
-        undefinedInstruction,
+        new Instruction("*RLA", AddressingMode.ZEROPAGE_X, 6, () -> RLA()),
         new Instruction("SEC", AddressingMode.IMPLIED, 2,     () -> SEC()),
         new Instruction("AND", AddressingMode.ABSOLUTE_Y, 4,  () -> AND()),
-        undefinedInstruction, undefinedInstruction, undefinedInstruction,
+        new Instruction("*NOP", AddressingMode.IMPLIED, 2,    () -> NOP()),
+        new Instruction("*RLA", AddressingMode.ABSOLUTE_Y, 7, () -> RLA()),
+        new Instruction("*NOP", AddressingMode.ABSOLUTE_X, 4, () -> NOP()),
         new Instruction("AND", AddressingMode.ABSOLUTE_X, 4,  () -> AND()),
         new Instruction("ROL", AddressingMode.ABSOLUTE_X, 7,  () -> ROL()),
-        undefinedInstruction,
+        new Instruction("*RLA", AddressingMode.ABSOLUTE_X, 7, () -> RLA()),
         // 4-
         new Instruction("RTI", AddressingMode.IMPLIED, 6,     () -> RTI()),
         new Instruction("EOR", AddressingMode.INDIRECT_X, 6,  () -> EOR()),
-        undefinedInstruction, undefinedInstruction, undefinedInstruction,
+        undefinedInstruction,
+        new Instruction("*SRE", AddressingMode.INDIRECT_X, 8, () -> SRE()),
+        new Instruction("*NOP", AddressingMode.ZEROPAGE, 3,   () -> NOP()),
         new Instruction("EOR", AddressingMode.ZEROPAGE, 3,    () -> EOR()),
         new Instruction("LSR", AddressingMode.ZEROPAGE, 5,    () -> LSR()),
-        undefinedInstruction,
+        new Instruction("*SRE", AddressingMode.ZEROPAGE, 5,   () -> SRE()),
         new Instruction("PHA", AddressingMode.IMPLIED, 3,     () -> PHA()),
         new Instruction("EOR", AddressingMode.IMMEDIATE, 2,   () -> EOR()),
         new Instruction("LSR", AddressingMode.ACCUMULATOR, 2, () -> LSR()),
-        undefinedInstruction,
+        new Instruction("*ALR", AddressingMode.IMMEDIATE, 2,  () -> ALR()),
         new Instruction("JMP", AddressingMode.ABSOLUTE, 3,    () -> JMP()),
         new Instruction("EOR", AddressingMode.ABSOLUTE, 4,    () -> EOR()),
         new Instruction("LSR", AddressingMode.ABSOLUTE, 6,    () -> LSR()),
-        undefinedInstruction,
+        new Instruction("*SRE", AddressingMode.ABSOLUTE, 6,   () -> SRE()),
         // 5-
         new Instruction("BVC", AddressingMode.RELATIVE, 2,    () -> BVC()),
         new Instruction("EOR", AddressingMode.INDIRECT_Y, 5,  () -> EOR()),
-        undefinedInstruction, undefinedInstruction, undefinedInstruction,
+        undefinedInstruction,
+        new Instruction("*SRE", AddressingMode.INDIRECT_Y, 8, () -> SRE()),
+        new Instruction("*NOP", AddressingMode.ZEROPAGE_X, 4, () -> NOP()),
         new Instruction("EOR", AddressingMode.ZEROPAGE_X, 4,  () -> EOR()),
         new Instruction("LSR", AddressingMode.ZEROPAGE_X, 6,  () -> LSR()),
-        undefinedInstruction,
+        new Instruction("*SRE", AddressingMode.ZEROPAGE_X, 6, () -> SRE()),
         new Instruction("CLI", AddressingMode.IMPLIED, 2,     () -> CLI()),
         new Instruction("EOR", AddressingMode.ABSOLUTE_Y, 4,  () -> EOR()),
-        undefinedInstruction, undefinedInstruction, undefinedInstruction,
+        new Instruction("*NOP", AddressingMode.IMPLIED, 2,    () -> NOP()),
+        new Instruction("*SRE", AddressingMode.ABSOLUTE_Y, 7, () -> SRE()),
+        new Instruction("*NOP", AddressingMode.ABSOLUTE_X, 4, () -> NOP()),
         new Instruction("EOR", AddressingMode.ABSOLUTE_X, 4,  () -> EOR()),
         new Instruction("LSR", AddressingMode.ABSOLUTE_X, 7,  () -> LSR()),
-        undefinedInstruction,
+        new Instruction("*SRE", AddressingMode.ABSOLUTE_X, 7, () -> SRE()),
         // 6-
         new Instruction("RTS", AddressingMode.IMPLIED, 6,     () -> RTS()),
         new Instruction("ADC", AddressingMode.INDIRECT_X, 6,  () -> ADC()),
-        undefinedInstruction, undefinedInstruction, undefinedInstruction,
+        undefinedInstruction,
+        new Instruction("*RRA", AddressingMode.INDIRECT_X, 8, () -> RRA()),
+        new Instruction("*NOP", AddressingMode.ZEROPAGE, 3,   () -> NOP()),
         new Instruction("ADC", AddressingMode.ZEROPAGE, 3,    () -> ADC()),
         new Instruction("ROR", AddressingMode.ZEROPAGE, 5,    () -> ROR()),
-        undefinedInstruction,
+        new Instruction("*RRA", AddressingMode.ZEROPAGE, 5,   () -> RRA()),
         new Instruction("PLA", AddressingMode.IMPLIED, 4,     () -> PLA()),
         new Instruction("ADC", AddressingMode.IMMEDIATE, 2,   () -> ADC()),
         new Instruction("ROR", AddressingMode.ACCUMULATOR, 2, () -> ROR()),
@@ -295,36 +310,41 @@ public class CPU extends MemoryMapped {
         new Instruction("JMP", AddressingMode.INDIRECT, 5,    () -> JMP()),
         new Instruction("ADC", AddressingMode.ABSOLUTE, 4,    () -> ADC()),
         new Instruction("ROR", AddressingMode.ABSOLUTE, 6,    () -> ROR()),
-        undefinedInstruction,
+        new Instruction("*RRA", AddressingMode.ABSOLUTE, 6,   () -> RRA()),
         // 7-
         new Instruction("BVS", AddressingMode.RELATIVE, 2,    () -> BVS()),
         new Instruction("ADC", AddressingMode.INDIRECT_Y, 5,  () -> ADC()),
-        undefinedInstruction, undefinedInstruction, undefinedInstruction,
+        undefinedInstruction,
+        new Instruction("*RRA", AddressingMode.INDIRECT_Y, 8, () -> RRA()),
+        new Instruction("*NOP", AddressingMode.ZEROPAGE_X, 4, () -> NOP()),
         new Instruction("ADC", AddressingMode.ZEROPAGE_X, 4,  () -> ADC()),
         new Instruction("ROR", AddressingMode.ZEROPAGE_X, 6,  () -> ROR()),
-        undefinedInstruction,
+        new Instruction("*RRA", AddressingMode.ZEROPAGE_X, 6, () -> RRA()),
         new Instruction("SEI", AddressingMode.IMPLIED, 2,     () -> SEI()),
         new Instruction("ADC", AddressingMode.ABSOLUTE_Y, 4,  () -> ADC()),
-        undefinedInstruction, undefinedInstruction, undefinedInstruction,
+        new Instruction("*NOP", AddressingMode.IMPLIED, 2,    () -> NOP()),
+        new Instruction("*RRA", AddressingMode.ABSOLUTE_Y, 7, () -> RRA()),
+        new Instruction("*NOP", AddressingMode.ABSOLUTE_X, 4, () -> NOP()),
         new Instruction("ADC", AddressingMode.ABSOLUTE_X, 4,  () -> ADC()),
         new Instruction("ROR", AddressingMode.ABSOLUTE_X, 7,  () -> ROR()),
-        undefinedInstruction,
+        new Instruction("*RRA", AddressingMode.ABSOLUTE_X, 7, () -> RRA()),
         // 8-
-        undefinedInstruction,
+        new Instruction("*NOP", AddressingMode.IMMEDIATE, 2,  () -> NOP()),
         new Instruction("STA", AddressingMode.INDIRECT_X, 6,  () -> STA()),
-        undefinedInstruction, undefinedInstruction,
+        undefinedInstruction,
+        new Instruction("*SAX", AddressingMode.INDIRECT_X, 6, () -> SAX()),
         new Instruction("STY", AddressingMode.ZEROPAGE, 3,    () -> STY()),
         new Instruction("STA", AddressingMode.ZEROPAGE, 3,    () -> STA()),
         new Instruction("STX", AddressingMode.ZEROPAGE, 3,    () -> STX()),
-        undefinedInstruction,
+        new Instruction("*SAX", AddressingMode.ZEROPAGE, 3,   () -> SAX()),
         new Instruction("DEY", AddressingMode.IMPLIED, 2,     () -> DEY()),
-        undefinedInstruction,
+        new Instruction("*NOP", AddressingMode.IMMEDIATE, 2,  () -> NOP()),
         new Instruction("TXA", AddressingMode.IMPLIED, 2,     () -> TXA()),
         undefinedInstruction,
         new Instruction("STY", AddressingMode.ABSOLUTE, 4,    () -> STY()),
         new Instruction("STA", AddressingMode.ABSOLUTE, 4,    () -> STA()),
         new Instruction("STX", AddressingMode.ABSOLUTE, 4,    () -> STX()),
-        undefinedInstruction,
+        new Instruction("*SAX", AddressingMode.ABSOLUTE, 4,   () -> SAX()),
         // 9-
         new Instruction("BCC", AddressingMode.RELATIVE, 2,    () -> BCC()),
         new Instruction("STA", AddressingMode.INDIRECT_Y, 6,  () -> STA()),
@@ -332,7 +352,7 @@ public class CPU extends MemoryMapped {
         new Instruction("STY", AddressingMode.ZEROPAGE_X, 4,  () -> STY()),
         new Instruction("STA", AddressingMode.ZEROPAGE_X, 4,  () -> STA()),
         new Instruction("STX", AddressingMode.ZEROPAGE_Y, 4,  () -> STX()),
-        undefinedInstruction,
+        new Instruction("*SAX", AddressingMode.ZEROPAGE_Y, 4, () -> SAX()),
         new Instruction("TYA", AddressingMode.IMPLIED, 2,     () -> TYA()),
         new Instruction("STA", AddressingMode.ABSOLUTE_Y, 5,  () -> STA()),
         new Instruction("TXS", AddressingMode.IMPLIED, 2,     () -> TXS()),
@@ -343,11 +363,11 @@ public class CPU extends MemoryMapped {
         new Instruction("LDY", AddressingMode.IMMEDIATE, 2,   () -> LDY()),
         new Instruction("LDA", AddressingMode.INDIRECT_X, 6,  () -> LDA()),
         new Instruction("LDX", AddressingMode.IMMEDIATE, 2,   () -> LDX()),
-        undefinedInstruction,
+        new Instruction("*LAX", AddressingMode.INDIRECT_X, 6, () -> LAX()),
         new Instruction("LDY", AddressingMode.ZEROPAGE, 3,    () -> LDY()),
         new Instruction("LDA", AddressingMode.ZEROPAGE, 3,    () -> LDA()),
         new Instruction("LDX", AddressingMode.ZEROPAGE, 3,    () -> LDX()),
-        undefinedInstruction,
+        new Instruction("*LAX", AddressingMode.ZEROPAGE, 3,   () -> LAX()),
         new Instruction("TAY", AddressingMode.IMPLIED, 2,     () -> TAY()),
         new Instruction("LDA", AddressingMode.IMMEDIATE, 2,   () -> LDA()),
         new Instruction("TAX", AddressingMode.IMPLIED, 2,     () -> TAX()),
@@ -355,15 +375,16 @@ public class CPU extends MemoryMapped {
         new Instruction("LDY", AddressingMode.ABSOLUTE, 4,    () -> LDY()),
         new Instruction("LDA", AddressingMode.ABSOLUTE, 4,    () -> LDA()),
         new Instruction("LDX", AddressingMode.ABSOLUTE, 4,    () -> LDX()),
-        undefinedInstruction,
+        new Instruction("*LAX", AddressingMode.ABSOLUTE, 4,   () -> LAX()),
         // B-
         new Instruction("BCS", AddressingMode.RELATIVE, 2,    () -> BCS()),
         new Instruction("LDA", AddressingMode.INDIRECT_Y, 5,  () -> LDA()),
-        undefinedInstruction, undefinedInstruction,
+        undefinedInstruction,
+        new Instruction("*LAX", AddressingMode.INDIRECT_Y, 5, () -> LAX()),
         new Instruction("LDY", AddressingMode.ZEROPAGE_X, 4,  () -> LDY()),
         new Instruction("LDA", AddressingMode.ZEROPAGE_X, 4,  () -> LDA()),
         new Instruction("LDX", AddressingMode.ZEROPAGE_Y, 4,  () -> LDX()),
-        undefinedInstruction,
+        new Instruction("*LAX", AddressingMode.ZEROPAGE_Y, 4, () -> LAX()),
         new Instruction("CLV", AddressingMode.IMPLIED, 2,     () -> CLV()),
         new Instruction("LDA", AddressingMode.ABSOLUTE_Y, 4,  () -> LDA()),
         new Instruction("TSX", AddressingMode.IMPLIED, 2,     () -> TSX()),
@@ -371,15 +392,16 @@ public class CPU extends MemoryMapped {
         new Instruction("LDY", AddressingMode.ABSOLUTE_X, 4,  () -> LDY()),
         new Instruction("LDA", AddressingMode.ABSOLUTE_X, 4,  () -> LDA()),
         new Instruction("LDX", AddressingMode.ABSOLUTE_Y, 4,  () -> LDX()),
-        undefinedInstruction,
+        new Instruction("*LAX", AddressingMode.ABSOLUTE_Y, 4, () -> LAX()),
         // C-
         new Instruction("CPY", AddressingMode.IMMEDIATE, 2,   () -> CPY()),
         new Instruction("CMP", AddressingMode.INDIRECT_X, 6,  () -> CMP()),
-        undefinedInstruction, undefinedInstruction,
+        new Instruction("*NOP", AddressingMode.IMMEDIATE, 2,  () -> NOP()),
+        new Instruction("*DCP", AddressingMode.INDIRECT_X, 8, () -> DCP()),
         new Instruction("CPY", AddressingMode.ZEROPAGE, 3,    () -> CPY()),
         new Instruction("CMP", AddressingMode.ZEROPAGE, 3,    () -> CMP()),
         new Instruction("DEC", AddressingMode.ZEROPAGE, 5,    () -> DEC()),
-        undefinedInstruction,
+        new Instruction("*DCP", AddressingMode.ZEROPAGE, 5,   () -> DCP()),
         new Instruction("INY", AddressingMode.IMPLIED, 2,     () -> INY()),
         new Instruction("CMP", AddressingMode.IMMEDIATE, 2,   () -> CMP()),
         new Instruction("DEX", AddressingMode.IMPLIED, 2,     () -> DEX()),
@@ -387,49 +409,58 @@ public class CPU extends MemoryMapped {
         new Instruction("CPY", AddressingMode.ABSOLUTE, 4,    () -> CPY()),
         new Instruction("CMP", AddressingMode.ABSOLUTE, 4,    () -> CMP()),
         new Instruction("DEC", AddressingMode.ABSOLUTE, 6,    () -> DEC()),
-        undefinedInstruction,
+        new Instruction("*DCP", AddressingMode.ABSOLUTE, 6,   () -> DCP()),
         // D-
         new Instruction("BNE", AddressingMode.RELATIVE, 2,    () -> BNE()),
         new Instruction("CMP", AddressingMode.INDIRECT_Y, 5,  () -> CMP()),
-        undefinedInstruction, undefinedInstruction, undefinedInstruction,
+        undefinedInstruction,
+        new Instruction("*DCP", AddressingMode.INDIRECT_Y, 8, () -> DCP()),
+        new Instruction("*NOP", AddressingMode.ZEROPAGE_X, 4, () -> NOP()),
         new Instruction("CMP", AddressingMode.ZEROPAGE_X, 4,  () -> CMP()),
         new Instruction("DEC", AddressingMode.ZEROPAGE_X, 6,  () -> DEC()),
-        undefinedInstruction,
+        new Instruction("*DCP", AddressingMode.ZEROPAGE_X, 6, () -> DCP()),
         new Instruction("CLD", AddressingMode.IMPLIED, 2,     () -> CLD()),
         new Instruction("CMP", AddressingMode.ABSOLUTE_Y, 4,  () -> CMP()),
-        undefinedInstruction, undefinedInstruction, undefinedInstruction,
+        new Instruction("*NOP", AddressingMode.IMPLIED, 2,    () -> NOP()),
+        new Instruction("*DCP", AddressingMode.ABSOLUTE_Y, 7, () -> DCP()),
+        new Instruction("*NOP", AddressingMode.ABSOLUTE_X, 4, () -> NOP()),
         new Instruction("CMP", AddressingMode.ABSOLUTE_X, 4,  () -> CMP()),
         new Instruction("DEC", AddressingMode.ABSOLUTE_X, 7,  () -> DEC()),
-        undefinedInstruction,
+        new Instruction("*DCP", AddressingMode.ABSOLUTE_X, 7, () -> DCP()),
         // E-
         new Instruction("CPX", AddressingMode.IMMEDIATE, 2,   () -> CPX()),
         new Instruction("SBC", AddressingMode.INDIRECT_X, 6,  () -> SBC()),
-        undefinedInstruction, undefinedInstruction,
+        new Instruction("*NOP", AddressingMode.IMMEDIATE, 2,  () -> NOP()),
+        new Instruction("*ISC", AddressingMode.INDIRECT_X, 8, () -> ISC()),
         new Instruction("CPX", AddressingMode.ZEROPAGE, 3,    () -> CPX()),
         new Instruction("SBC", AddressingMode.ZEROPAGE, 3,    () -> SBC()),
         new Instruction("INC", AddressingMode.ZEROPAGE, 5,    () -> INC()),
-        undefinedInstruction,
+        new Instruction("*ISC", AddressingMode.ZEROPAGE, 5,   () -> ISC()),
         new Instruction("INX", AddressingMode.IMPLIED, 2,     () -> INX()),
         new Instruction("SBC", AddressingMode.IMMEDIATE, 2,   () -> SBC()),
         new Instruction("NOP", AddressingMode.IMPLIED, 2,     () -> NOP()),
-        undefinedInstruction,
+        new Instruction("*SBC", AddressingMode.IMMEDIATE, 2,  () -> SBC()),
         new Instruction("CPX", AddressingMode.ABSOLUTE, 4,    () -> CPX()),
         new Instruction("SBC", AddressingMode.ABSOLUTE, 4,    () -> SBC()),
         new Instruction("INC", AddressingMode.ABSOLUTE, 6,    () -> INC()),
-        undefinedInstruction,
+        new Instruction("*ISC", AddressingMode.ABSOLUTE, 6,   () -> ISC()),
         // F-
         new Instruction("BEQ", AddressingMode.RELATIVE, 2,    () -> BEQ()),
         new Instruction("SBC", AddressingMode.INDIRECT_Y, 5,  () -> SBC()),
-        undefinedInstruction, undefinedInstruction, undefinedInstruction,
+        undefinedInstruction,
+        new Instruction("*ISC", AddressingMode.INDIRECT_Y, 8, () -> ISC()),
+        new Instruction("*NOP", AddressingMode.ZEROPAGE_X, 4, () -> NOP()),
         new Instruction("SBC", AddressingMode.ZEROPAGE_X, 4,  () -> SBC()),
         new Instruction("INC", AddressingMode.ZEROPAGE_X, 6,  () -> INC()),
-        undefinedInstruction,
+        new Instruction("*ISC", AddressingMode.ZEROPAGE_X, 6, () -> ISC()),
         new Instruction("SED", AddressingMode.IMPLIED, 2,     () -> SED()),
         new Instruction("SBC", AddressingMode.ABSOLUTE_Y, 4,  () -> SBC()),
-        undefinedInstruction, undefinedInstruction, undefinedInstruction,
+        new Instruction("*NOP", AddressingMode.IMPLIED, 2,    () -> NOP()),
+        new Instruction("*ISC", AddressingMode.ABSOLUTE_Y, 7, () -> ISC()),
+        new Instruction("*NOP", AddressingMode.ABSOLUTE_X, 4, () -> NOP()),
         new Instruction("SBC", AddressingMode.ABSOLUTE_X, 4,  () -> SBC()),
         new Instruction("INC", AddressingMode.ABSOLUTE_X, 7,  () -> INC()),
-        undefinedInstruction
+        new Instruction("*ISC", AddressingMode.ABSOLUTE_X, 7, () -> ISC()),
     };
 
     private void pushToStack(byte value) {
@@ -451,8 +482,11 @@ public class CPU extends MemoryMapped {
     }
 
     private void pullPFromStack() {
+        boolean prevBreakFlag = getFlag(StatusFlag.BREAK);
+        boolean prevBit5Flag = getFlag(StatusFlag.BIT5);
         regP = pullFromStack();
-        regP &= ~CPU.StatusFlag.BIT5.bit & ~CPU.StatusFlag.BREAK.bit;
+        setFlag(StatusFlag.BREAK, prevBreakFlag);
+        setFlag(StatusFlag.BIT5, prevBit5Flag);
     }
 
     private void ADC() {
@@ -467,6 +501,16 @@ public class CPU extends MemoryMapped {
         setFlag(StatusFlag.NEGATIVE, (regA & 0x80) != 0);
         setFlag(StatusFlag.OVERFLOW, (operand & 0x80) == (previousRegA & 0x80) &&
                 (sum & 0x80) != (operand & 0x80));
+    }
+
+    private void ALR() {
+        AND();
+        LSR();
+    }
+
+    private void ANC() {
+        AND();
+        setFlag(StatusFlag.CARRY, getFlag(StatusFlag.NEGATIVE));
     }
 
     private void AND() {
@@ -569,7 +613,7 @@ public class CPU extends MemoryMapped {
         final int result = Byte.compareUnsigned(regA, operand);
         setFlag(StatusFlag.CARRY, result >= 0);
         setFlag(StatusFlag.ZERO, result == 0);
-        setFlag(StatusFlag.NEGATIVE, result < 0);
+        setFlag(StatusFlag.NEGATIVE, ((regA - operand) & 0x80) != 0);
     }
 
     private void CPX() {
@@ -577,7 +621,7 @@ public class CPU extends MemoryMapped {
         final int result = Byte.compareUnsigned(regX, operand);
         setFlag(StatusFlag.CARRY, result >= 0);
         setFlag(StatusFlag.ZERO, result == 0);
-        setFlag(StatusFlag.NEGATIVE, result < 0);
+        setFlag(StatusFlag.NEGATIVE, ((regX - operand) & 0x80) != 0);
     }
 
     private void CPY() {
@@ -585,7 +629,14 @@ public class CPU extends MemoryMapped {
         final int result = Byte.compareUnsigned(regY, operand);
         setFlag(StatusFlag.CARRY, result >= 0);
         setFlag(StatusFlag.ZERO, result == 0);
-        setFlag(StatusFlag.NEGATIVE, result < 0);
+        setFlag(StatusFlag.NEGATIVE, ((regY - operand) & 0x80) != 0);
+    }
+
+    private void DCP() {
+        byte operand = addressSpace.readByte(operandEffectiveAddress);
+        operand--;
+        addressSpace.writeByte(operandEffectiveAddress, operand);
+        CMP();
     }
 
     private void DEC() {
@@ -634,6 +685,13 @@ public class CPU extends MemoryMapped {
         setFlag(StatusFlag.NEGATIVE, (regY & 0x80) != 0);
     }
 
+    private void ISC() {
+        byte operand = addressSpace.readByte(operandEffectiveAddress);
+        operand++;
+        addressSpace.writeByte(operandEffectiveAddress, operand);
+        SBC();
+    }
+
     private void JMP() {
         regPC = operandEffectiveAddress;
     }
@@ -643,6 +701,11 @@ public class CPU extends MemoryMapped {
         pushToStack((byte)((regPC & 0xFF00) >> 8));
         pushToStack((byte)(regPC & 0xFF));
         regPC = operandEffectiveAddress;
+    }
+
+    private void LAX() {
+        LDA();
+        regX = regA;
     }
 
     private void LDA() {
@@ -710,6 +773,11 @@ public class CPU extends MemoryMapped {
         pullPFromStack();
     }
 
+    private void RLA() {
+        ROL();
+        AND();
+    }
+
     private void ROL() {
         int result;
         if (isMemoryOperand) {
@@ -749,6 +817,11 @@ public class CPU extends MemoryMapped {
         setFlag(StatusFlag.NEGATIVE, (result & 0x80) != 0);
     }
 
+    private void RRA() {
+        ROR();
+        ADC();
+    }
+
     private void RTI() {
         pullPFromStack();
         regPC = (short)Byte.toUnsignedInt(pullFromStack());
@@ -759,6 +832,10 @@ public class CPU extends MemoryMapped {
         regPC = (short)Byte.toUnsignedInt(pullFromStack());
         regPC += pullFromStack() << 8;
         regPC++;
+    }
+
+    private void SAX() {
+        addressSpace.writeByte(operandEffectiveAddress, (byte)(regA & regX));
     }
 
     private void SBC() {
@@ -785,6 +862,16 @@ public class CPU extends MemoryMapped {
 
     private void SEI() {
         setFlag(StatusFlag.IRQ_DISABLE, true);
+    }
+
+    private void SLO() {
+        ASL();
+        ORA();
+    }
+
+    private void SRE() {
+        LSR();
+        EOR();
     }
 
     private void STA() {
