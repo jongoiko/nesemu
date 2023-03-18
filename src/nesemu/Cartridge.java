@@ -18,7 +18,7 @@ public class Cartridge extends MemoryMapped {
 
     @Override
     boolean addressIsMapped(short address) {
-        return Short.toUnsignedInt(address) >= 0x8000;
+        return Short.toUnsignedInt(address) >= 0x4020;
     }
 
     @Override
