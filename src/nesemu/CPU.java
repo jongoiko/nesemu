@@ -104,6 +104,13 @@ public class CPU extends MemoryMapped {
         cyclesUntilNextInstruction--;
     }
 
+    public void reset() {
+        regS -= 3;
+        setFlag(StatusFlag.IRQ_DISABLE, true);
+        regPC = (short)Byte.toUnsignedInt(addressSpace.readByte((short)0xFFFE));
+        regPC += addressSpace.readByte((short)0xFFFF) << 8;
+    }
+
     private byte readByteAtPCAndIncrement() {
         return addressSpace.readByte(regPC++);
     }
