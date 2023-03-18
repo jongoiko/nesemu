@@ -11,12 +11,16 @@ public class PPU extends MemoryMapped {
 
     private final PPUCTRL regPPUCTRL;
     private final PPUMASK regPPUMASK;
+    private final PPUSTATUS regPPUSTATUS;
+    private byte regOAMADDR;
+    private byte regOAMDATA;
 
     public PPU() {
         patternMemory = new byte[PATTERN_TABLE_SIZE][2];
         paletteMemory = new byte[PALETTE_MEM_SIZE];
         regPPUCTRL = new PPUCTRL(0, 1, 0, 0, 8, true, false);
         regPPUMASK = new PPUMASK(false, false, false, false, false, false, false, false);
+        regPPUSTATUS = new PPUSTATUS(false, false, false);
     }
 
     private class PPUCTRL {
@@ -86,6 +90,24 @@ public class PPU extends MemoryMapped {
         }
     }
 
+    private class PPUSTATUS {
+        public boolean spriteOverflow;
+        public boolean spriteZeroHit;
+        public boolean verticalBlank;
+
+        public PPUSTATUS(boolean spriteOverflow, boolean spriteZeroHit,
+                boolean verticalBlank) {
+            this.spriteOverflow = spriteOverflow;
+            this.spriteZeroHit = spriteZeroHit;
+            this.verticalBlank = verticalBlank;
+        }
+
+        public byte toByte() {
+            return (byte)((spriteOverflow ? 32 : 0) | (spriteZeroHit ? 64 : 0) |
+                    (verticalBlank ? 128 : 0));
+        }
+    }
+
     private enum PPURegister {
         PPUCTRL(0),
         PPUMASK(1),
@@ -110,20 +132,25 @@ public class PPU extends MemoryMapped {
 
     @Override
     byte readByteFromDevice(short address) {
-        return 0;
+        switch (address & 7) {
+            case 2 -> {
+                return regPPUSTATUS.toByte();
+            }
+            case 4 -> {
+                return regOAMDATA;
+            }
+            default -> throw new UnsupportedOperationException("Unsupported PPU register");
+        }
     }
 
     @Override
     void writeByteToDevice(short address, byte value) {
         switch (address & 7) {
-            case 0:
-                regPPUCTRL.update(value);
-                break;
-            case 1:
-                regPPUMASK.update(value);
-                break;
-            default:
-                throw new UnsupportedOperationException("Unsupported PPU register");
+            case 0 -> regPPUCTRL.update(value);
+            case 1 -> regPPUMASK.update(value);
+            case 2 -> regOAMADDR = value;
+            case 4 -> regOAMDATA = value;
+            default -> throw new UnsupportedOperationException("Unsupported PPU register");
         }
     }
 }
