@@ -129,23 +129,6 @@ public class PPU extends MemoryMapped {
         }
     }
 
-    private enum PPURegister {
-        PPUCTRL(0),
-        PPUMASK(1),
-        PPUSTATUS(2),
-        OAMADDR(3),
-        OAMDATA(4),
-        PPUSCROLL(5),
-        PPUADDR(6),
-        PPUDATA(7);
-
-        public final int index;
-
-        PPURegister(int index) {
-            this.index = index;
-        }
-    }
-
     @Override
     boolean addressIsMapped(short address) {
         return address >= 0x2000 && address <= 0x3FFF;
