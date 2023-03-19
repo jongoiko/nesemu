@@ -134,12 +134,12 @@ public class PPU extends MemoryMapped {
     }
 
     private void writeByteAtPPUADDR(byte value) {
-        short address = regPPUADDR.twoByteValue;
-        if (address >= 0 && address < 0x2000)
+        short address = (short)(regPPUADDR.twoByteValue & 0x3FFF);
+        if (address < 0x2000)
             patternMemory[(address & 0x1000) >>> 12][address & 0xFFF] = value;
         else if (address >= 0x2000 && address < 0x3F00)
             nametableMemory[(address & 0xC00) >>> 10][address & 0x3FF] = value;
-        else if (address >= 0x3F00 && address < 0x4000)
+        else if (address >= 0x3F00)
             paletteMemory[address & 0x1F] = value;
         else
             throw new UnsupportedOperationException("Unsupported PPUADDR address");
