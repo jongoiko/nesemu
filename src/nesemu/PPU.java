@@ -5,9 +5,11 @@ public class PPU extends MemoryMapped {
 
     private final static int PATTERN_TABLE_SIZE = 4096;
     private final static int PALETTE_MEM_SIZE = 32;
+    private final static int NAMETABLE_SIZE = 1024;
 
     private final byte patternMemory[][];
     private final byte paletteMemory[];
+    private final byte nametableMemory[][];
 
     private final PPUCTRL regPPUCTRL;
     private final PPUMASK regPPUMASK;
@@ -21,6 +23,7 @@ public class PPU extends MemoryMapped {
     public PPU() {
         patternMemory = new byte[2][PATTERN_TABLE_SIZE];
         paletteMemory = new byte[PALETTE_MEM_SIZE];
+        nametableMemory = new byte[4][NAMETABLE_SIZE];
         regPPUCTRL = new PPUCTRL(0, 1, 0, 0, 8, true, false);
         regPPUMASK = new PPUMASK(false, false, false, false, false, false, false, false);
         regPPUSTATUS = new PPUSTATUS(false, false, false);
@@ -134,6 +137,8 @@ public class PPU extends MemoryMapped {
         short address = regPPUADDR.twoByteValue;
         if (address >= 0 && address < 0x2000)
             patternMemory[(address & 0x1000) >>> 12][address & 0xFFF] = value;
+        else if (address >= 0x2000 && address < 0x3F00)
+            nametableMemory[(address & 0xC00) >>> 10][address & 0x3FF] = value;
         else if (address >= 0x3F00 && address < 0x4000)
             paletteMemory[address & 0x1F] = value;
         else
