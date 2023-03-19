@@ -178,6 +178,7 @@ public class PPU extends MemoryMapped {
             case 7 -> {
                 regPPUDATA = value;
                 writeByteAtPPUADDR(value);
+                regPPUADDR.twoByteValue += regPPUCTRL.nametableAddressIncrement;
             }
             default -> throw new UnsupportedOperationException("Unsupported PPU register");
         }
