@@ -118,18 +118,18 @@ public class PPU extends MemoryMapped {
 
     private class TwoByteRegister {
         public short twoByteValue;
-        private boolean lowerByteSet;
+        private boolean upperByteSet;
 
         public TwoByteRegister(short twoByteValue) {
             this.twoByteValue = twoByteValue;
-            this.lowerByteSet = false;
+            this.upperByteSet = false;
         }
 
         public void update(byte value) {
-            if (lowerByteSet)
-                twoByteValue |= value << 8;
+            if (upperByteSet)
+                twoByteValue |= value;
             else
-                twoByteValue = (short)(value & 0xFF);
+                twoByteValue = (short)(value << 8);
         }
     }
 
