@@ -19,7 +19,7 @@ public class PPU extends MemoryMapped {
     private byte regPPUDATA;
 
     public PPU() {
-        patternMemory = new byte[PATTERN_TABLE_SIZE][2];
+        patternMemory = new byte[2][PATTERN_TABLE_SIZE];
         paletteMemory = new byte[PALETTE_MEM_SIZE];
         regPPUCTRL = new PPUCTRL(0, 1, 0, 0, 8, true, false);
         regPPUMASK = new PPUMASK(false, false, false, false, false, false, false, false);
@@ -133,7 +133,7 @@ public class PPU extends MemoryMapped {
     private void writeByteAtPPUADDR(byte value) {
         short address = regPPUADDR.twoByteValue;
         if (address >= 0 && address < 0x2000)
-            patternMemory[address & 0xFFF][address & 0x1000] = value;
+            patternMemory[(address & 0x1000) >>> 12][address & 0xFFF] = value;
         else if (address >= 0x3F00 && address < 0x4000)
             paletteMemory[address & 0x1F] = value;
         else
