@@ -130,6 +130,16 @@ public class PPU extends MemoryMapped {
         }
     }
 
+    private void writeByteAtPPUADDR(byte value) {
+        short address = regPPUADDR.twoByteValue;
+        if (address >= 0 && address < 0x2000)
+            patternMemory[address & 0xFFF][address & 0x1000] = value;
+        else if (address >= 0x3F00 && address < 0x4000)
+            paletteMemory[address & 0x1F] = value;
+        else
+            throw new UnsupportedOperationException("Unsupported PPUADDR address");
+    }
+
     @Override
     boolean addressIsMapped(short address) {
         return address >= 0x2000 && address <= 0x3FFF;
@@ -160,7 +170,10 @@ public class PPU extends MemoryMapped {
             case 4 -> regOAMDATA = value;
             case 5 -> regPPUSCROLL.update(value);
             case 6 -> regPPUADDR.update(value);
-            case 7 -> regPPUDATA = value;
+            case 7 -> {
+                regPPUDATA = value;
+                writeByteAtPPUADDR(value);
+            }
             default -> throw new UnsupportedOperationException("Unsupported PPU register");
         }
     }
