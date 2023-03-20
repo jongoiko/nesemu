@@ -1,6 +1,5 @@
 package nesemu;
 
-import java.awt.Color;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import javax.swing.JLabel;
@@ -73,32 +72,15 @@ public class MainFrame extends javax.swing.JFrame {
         mf.setLocationRelativeTo(null);
         mf.setVisible(true);
 
-        AddressSpace addressSpace = new AddressSpace();
-        Cartridge cartridge =
-                Cartridge.fromINESFile("/home/jon/UPNA/y2/s2/ap/project/roms/nestest.nes");
-        CPU cpu = new CPU();
-        PPU ppu = new PPU();
-        RAM ram = new RAM();
-        addressSpace.addDevice(cartridge);
-        addressSpace.addDevice(cpu);
-        addressSpace.addDevice(ram);
-        addressSpace.addDevice(ppu);
+        NES nes = new NES("/home/jon/UPNA/y2/s2/ap/project/roms/nestest.nes");
 
-        cpu.reset();
-        Color[][] frameBuffer = new Color[240][256];
         long frames = 0;
         long startTime = System.currentTimeMillis();
         final DecimalFormat df = new DecimalFormat("0.00");
-        for (;;) {
-            while (!ppu.isFrameReady) {
-                ppu.clockTick(frameBuffer, cpu, cartridge);
-                ppu.clockTick(frameBuffer, cpu, cartridge);
-                ppu.clockTick(frameBuffer, cpu, cartridge);
-                cpu.clockTick();
-            }
-            ppu.isFrameReady = false;
+        while (true) {
+            nes.runUntilFrameReady();
             frames++;
-            mf.panel.renderFrameBuffer(frameBuffer);
+            mf.panel.renderFrameBuffer(nes.frameBuffer);
             mf.repaint();
             long timeEllapsedMilliseconds = System.currentTimeMillis() - startTime;
             double fps = frames / ((double)timeEllapsedMilliseconds / 1000);
