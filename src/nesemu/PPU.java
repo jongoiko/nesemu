@@ -161,7 +161,7 @@ public class PPU extends MemoryMapped {
 
         public void update(byte value) {
             if (upperByteSet)
-                twoByteValue |= value;
+                twoByteValue |= Byte.toUnsignedInt(value);
             else
                 twoByteValue = (short)(value << 8);
             upperByteSet = !upperByteSet;
