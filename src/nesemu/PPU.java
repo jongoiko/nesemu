@@ -38,6 +38,8 @@ public class PPU extends MemoryMapped {
         if (scanline < 240 && column < 256) {
             int tileNumber = nametableMemory[regPPUCTRL.baseNametableAddress][(scanline / 8) * 32 + column / 8];
             int pixelAddress = (tileNumber * 16) + scanline % 8;
+            if (regPPUCTRL.backgroundPatternTableAddress == 1)
+                pixelAddress |= 0x1000;
             int colorNum = ((cartridge.ppuReadByte((short)(pixelAddress)) >>> (7 - column % 8)) & 1)
                         + 2 * ((cartridge.ppuReadByte((short)(pixelAddress + 8)) >>> (7 - column % 8)) & 1);
             final Color[] colors = new Color[] {
