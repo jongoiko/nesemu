@@ -130,6 +130,7 @@ public class PPU extends MemoryMapped {
                 twoByteValue |= value;
             else
                 twoByteValue = (short)(value << 8);
+            upperByteSet = !upperByteSet;
         }
     }
 
