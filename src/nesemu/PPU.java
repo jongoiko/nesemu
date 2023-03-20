@@ -1,13 +1,13 @@
 package nesemu;
 
+import java.awt.Color;
+
 public class PPU extends MemoryMapped {
     // TODO: OAM DMA
 
-    private final static int PATTERN_TABLE_SIZE = 4096;
     private final static int PALETTE_MEM_SIZE = 32;
     private final static int NAMETABLE_SIZE = 1024;
 
-    private final byte patternMemory[][];
     private final byte paletteMemory[];
     private final byte nametableMemory[][];
 
@@ -20,8 +20,11 @@ public class PPU extends MemoryMapped {
     private final TwoByteRegister regPPUADDR;
     private byte regPPUDATA;
 
+    private int scanline;
+    private int column;
+    public boolean isFrameReady;
+
     public PPU() {
-        patternMemory = new byte[2][PATTERN_TABLE_SIZE];
         paletteMemory = new byte[PALETTE_MEM_SIZE];
         nametableMemory = new byte[4][NAMETABLE_SIZE];
         regPPUCTRL = new PPUCTRL(0, 1, 0, 0, 8, true, false);
@@ -29,6 +32,35 @@ public class PPU extends MemoryMapped {
         regPPUSTATUS = new PPUSTATUS(false, false, false);
         regPPUADDR = new TwoByteRegister((short)0);
         regPPUSCROLL = new TwoByteRegister((short)0);
+    }
+
+    public void clockTick(Color[][] frameBuffer, CPU cpu, Cartridge cartridge) {
+        if (scanline < 240 && column < 256) {
+            int tileNumber = nametableMemory[regPPUCTRL.baseNametableAddress][(scanline / 8) * 32 + column / 8];
+            int pixelAddress = (tileNumber * 16) + scanline % 8;
+            int colorNum = ((cartridge.ppuReadByte((short)(pixelAddress)) >>> (7 - column % 8)) & 1)
+                        + 2 * ((cartridge.ppuReadByte((short)(pixelAddress + 8)) >>> (7 - column % 8)) & 1);
+            final Color[] colors = new Color[] {
+                Color.BLACK, Color.DARK_GRAY, Color.LIGHT_GRAY, Color.WHITE
+            };
+            frameBuffer[scanline][column] = colors[colorNum];
+        }
+        column++;
+        if (column >= 341) {
+            column = 0;
+            scanline++;
+        }
+        if (scanline >= 240) {
+            if (scanline == 240 && column == 0) {
+                isFrameReady = true;
+                if (regPPUCTRL.generateNMIOnVBlank)
+                    cpu.requestNMI = true;
+            }
+            regPPUSTATUS.verticalBlank = true;
+        } else
+            regPPUSTATUS.verticalBlank = false;
+        if (scanline >= 261)
+            scanline = 0;
     }
 
     private class PPUCTRL {
@@ -136,9 +168,10 @@ public class PPU extends MemoryMapped {
 
     private void writeByteAtPPUADDR(byte value) {
         short address = (short)(regPPUADDR.twoByteValue & 0x3FFF);
-        if (address < 0x2000)
-            patternMemory[(address & 0x1000) >>> 12][address & 0xFFF] = value;
-        else if (address >= 0x2000 && address < 0x3F00)
+        //if (address < 0x2000)
+        //    patternMemory[(address & 0x1000) >>> 12][address & 0xFFF] = value;
+        //else
+        if (address >= 0x2000 && address < 0x3F00)
             nametableMemory[(address & 0xC00) >>> 10][address & 0x3FF] = value;
         else if (address >= 0x3F00)
             paletteMemory[address & 0x1F] = value;
@@ -163,7 +196,8 @@ public class PPU extends MemoryMapped {
             case 7 -> {
                 return regPPUDATA;
             }
-            default -> throw new UnsupportedOperationException("Unsupported PPU register");
+            default -> throw new UnsupportedOperationException("Unsupported PPU register 0x" +
+                    String.format("%04X", address));
         }
     }
 
@@ -181,7 +215,8 @@ public class PPU extends MemoryMapped {
                 writeByteAtPPUADDR(value);
                 regPPUADDR.twoByteValue += regPPUCTRL.nametableAddressIncrement;
             }
-            default -> throw new UnsupportedOperationException("Unsupported PPU register");
+            default -> throw new UnsupportedOperationException("Unsupported PPU register 0x" +
+                    String.format("%04X", address));
         }
     }
 }

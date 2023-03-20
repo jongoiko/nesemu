@@ -11,11 +11,12 @@ public class CPU extends MemoryMapped {
     private short cyclesUntilNextInstruction;
     private short operandEffectiveAddress;
     private boolean isMemoryOperand;
+    public boolean requestNMI;
 
-    public CPU(short startPCAddress) {
-        regPC = startPCAddress;
+    public CPU() {
         regP = (byte)0x24;
         regS = (byte)0xFD;
+        requestNMI = false;
     }
 
     private void log(Instruction instruction, short pc) {
@@ -92,13 +93,15 @@ public class CPU extends MemoryMapped {
     public void clockTick() {
         if (cyclesUntilNextInstruction <= 0) {
             // Check for interrupts, etc.
-            short prevRegPC = regPC;
+            if (requestNMI)
+                serviceNMI();
+            // short prevRegPC = regPC;
             final byte opcode = readByteAtPCAndIncrement();
             final Instruction instruction = instructionLookupTable[Byte.toUnsignedInt(opcode)];
             operandEffectiveAddress = getEffectiveAddress(instruction.addressingMode,
                     opcode != 0x91);
             cyclesUntilNextInstruction += instruction.cycles;
-            log(instruction, prevRegPC);
+            // log(instruction, prevRegPC);
             instruction.operation.run();
         }
         cyclesUntilNextInstruction--;
@@ -109,6 +112,16 @@ public class CPU extends MemoryMapped {
         setFlag(StatusFlag.IRQ_DISABLE, true);
         regPC = (short)Byte.toUnsignedInt(addressSpace.readByte((short)0xFFFC));
         regPC += addressSpace.readByte((short)0xFFFD) << 8;
+    }
+
+    private void serviceNMI() {
+        final short pushedPC = (short)(regPC + 1);
+        pushToStack((byte)((pushedPC & 0xFF00) >> 8));
+        pushToStack((byte)(pushedPC & 0xFF));
+        pushPToStack(false);
+        regPC = (short)Byte.toUnsignedInt(addressSpace.readByte((short)0xFFFA));
+        regPC += addressSpace.readByte((short)0xFFFB) << 8;
+        requestNMI = false;
     }
 
     private byte readByteAtPCAndIncrement() {

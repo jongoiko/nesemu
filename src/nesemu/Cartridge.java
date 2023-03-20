@@ -31,6 +31,10 @@ public class Cartridge extends MemoryMapped {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    public byte ppuReadByte(short address) {
+        return chrROM[Short.toUnsignedInt(address) % chrROM.length];
+    }
+
     static public Cartridge fromINESFile(String filePath) throws IOException {
         DataInputStream stream = new DataInputStream(new FileInputStream(filePath));
         final byte iNESHeader[] = { 0x4E, 0x45, 0x53, 0x1A };
