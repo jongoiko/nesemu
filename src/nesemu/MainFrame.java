@@ -5,6 +5,9 @@ import java.text.DecimalFormat;
 import javax.swing.JLabel;
 
 public class MainFrame extends javax.swing.JFrame {
+    private static final int TARGET_FPS = 60;
+    private static final int NANOSECS_PER_FRAME = (int)((1.0 / TARGET_FPS) * 1000000000);
+
     final ScreenPanel panel;
     final javax.swing.JLabel fpsLabel;
 
@@ -78,6 +81,7 @@ public class MainFrame extends javax.swing.JFrame {
         long startTime = System.currentTimeMillis();
         final DecimalFormat df = new DecimalFormat("0.00");
         while (true) {
+            long frameStartTime = System.nanoTime(), frameEndTime;
             nes.runUntilFrameReady();
             frames++;
             mf.panel.renderFrameBuffer(nes.frameBuffer);
@@ -85,6 +89,9 @@ public class MainFrame extends javax.swing.JFrame {
             long timeEllapsedMilliseconds = System.currentTimeMillis() - startTime;
             double fps = frames / ((double)timeEllapsedMilliseconds / 1000);
             mf.fpsLabel.setText(df.format(fps));
+            do {
+                frameEndTime = System.nanoTime();
+            } while (frameEndTime - frameStartTime < NANOSECS_PER_FRAME);
         }
     }
 
