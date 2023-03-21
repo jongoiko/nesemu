@@ -217,7 +217,8 @@ public class PPU extends MemoryMapped {
         else if (address >= 0x3F00)
             paletteMemory[address & 0x1F] = value;
         else
-            throw new UnsupportedOperationException("Unsupported PPUADDR address");
+            throw new UnsupportedOperationException("Unsupported PPUADDR address " +
+                    String.format("%04X", address));
     }
 
     @Override
