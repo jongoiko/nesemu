@@ -115,7 +115,7 @@ public class CPU extends MemoryMapped {
     }
 
     private void serviceNMI() {
-        final short pushedPC = (short)(regPC + 1);
+        final short pushedPC = regPC;
         pushToStack((byte)((pushedPC & 0xFF00) >> 8));
         pushToStack((byte)(pushedPC & 0xFF));
         pushPToStack(false);
