@@ -190,8 +190,10 @@ public class PPU extends MemoryMapped {
         int lsb = (cartridge.ppuReadByte((short)(pixelAddress)) >>> (7 - column % 8)) & 1;
         int msb = (cartridge.ppuReadByte((short)(pixelAddress + 8)) >>> (7 - column % 8)) & 1;
         int colorNum = lsb + 2 * msb;
-        frameBuffer[scanline][column] =
-                SYSTEM_PALETTE[paletteMemory[getPaletteNumber() * 4 + colorNum]];
+        int colorCode = readByteFromPaletteMemory(getPaletteNumber() * 4 + colorNum);
+        if (regPPUMASK.grayscale && (colorCode & 0xF) < 0xD)
+            colorCode &= 0xF0;
+        frameBuffer[scanline][column] = SYSTEM_PALETTE[colorCode];
     }
 
     private int getPaletteNumber() {
