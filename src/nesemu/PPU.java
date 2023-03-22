@@ -57,7 +57,8 @@ public class PPU extends MemoryMapped {
 
     public void clockTick(Color[][] frameBuffer, CPU cpu) {
         if (scanline < 240 && column < 256) {
-            renderTile(frameBuffer);
+            if (regPPUMASK.showBackground)
+                renderTile(frameBuffer);
         }
         column++;
         if (column >= 341) {
