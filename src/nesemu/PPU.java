@@ -27,6 +27,7 @@ public class PPU extends MemoryMapped {
         new Color(160, 214, 228), new Color(160, 162, 160), new Color(0, 0, 0),       new Color(0, 0, 0)
     };
 
+    private final Cartridge cartridge;
     private final byte paletteMemory[];
     private final byte nametableMemory[][];
 
@@ -43,7 +44,8 @@ public class PPU extends MemoryMapped {
     private int column;
     public boolean isFrameReady;
 
-    public PPU() {
+    public PPU(Cartridge cartridge) {
+        this.cartridge = cartridge;
         paletteMemory = new byte[PALETTE_MEM_SIZE];
         nametableMemory = new byte[4][NAMETABLE_SIZE];
         regPPUCTRL = new PPUCTRL(0, 1, 0, 0, 8, true, false);
@@ -53,9 +55,9 @@ public class PPU extends MemoryMapped {
         regPPUSCROLL = new TwoByteRegister((short)0);
     }
 
-    public void clockTick(Color[][] frameBuffer, CPU cpu, Cartridge cartridge) {
+    public void clockTick(Color[][] frameBuffer, CPU cpu) {
         if (scanline < 240 && column < 256) {
-            renderTile(frameBuffer, cartridge);
+            renderTile(frameBuffer);
         }
         column++;
         if (column >= 341) {
@@ -178,7 +180,7 @@ public class PPU extends MemoryMapped {
         }
     }
 
-    private void renderTile(Color[][] frameBuffer, Cartridge cartridge) {
+    private void renderTile(Color[][] frameBuffer) {
         int tileNumber = nametableMemory[regPPUCTRL.baseNametableAddress]
                 [(scanline / 8) * 32 + column / 8];
         int pixelAddress = (tileNumber * 16) + scanline % 8;
@@ -196,15 +198,39 @@ public class PPU extends MemoryMapped {
                 (scanline / 32) * 8 + column / 32;
         byte attributeByte = nametableMemory[regPPUCTRL.baseNametableAddress]
                 [attributeAddress];
-        int regionNumberX = ((scanline / 16) * 16) % 2,
-                regionNumberY = (column / 16) % 2;
+        int regionNumberX = (scanline / 16) % 2, regionNumberY = (column / 16) % 2;
         if (regionNumberX == 0 && regionNumberY == 0)
             return attributeByte & 3;
-        else if (regionNumberX == 0 && regionNumberY == 1)
+        if (regionNumberX == 0 && regionNumberY == 1)
             return (attributeByte >>> 2) & 3;
-        else if (regionNumberX == 1 && regionNumberY == 0)
+        if (regionNumberX == 1 && regionNumberY == 0)
             return (attributeByte >>> 4) & 3;
         return (attributeByte >>> 6) & 3;
+    }
+
+    private byte readByteFromPaletteMemory(int address) {
+        if ((address & 0x10) != 0 && address % 4 == 0)
+            return paletteMemory[address & ~0x10];
+        return paletteMemory[address];
+    }
+
+    private void writeByteToPaletteMemory(int address, byte value) {
+        if ((address & 0x10) != 0 && address % 4 == 0)
+            paletteMemory[address & ~0x10] = value;
+        else
+            paletteMemory[address] = value;
+    }
+
+    private byte readByteFromPPUADDR() {
+        short address = regPPUADDR.twoByteValue;
+        if (address >= 0x3F00)
+            return readByteFromPaletteMemory(address & 0x1F);
+        byte buffer = regPPUDATA;
+        if (address < 0x2000)
+            regPPUDATA = cartridge.ppuReadByte(address);
+        else if (address >= 0x2000 && address < 0x3F00)
+            regPPUDATA =  nametableMemory[(address & 0xC00) >>> 10][address & 0x3FF];
+        return buffer;
     }
 
     private void writeByteAtPPUADDR(byte value) {
@@ -215,7 +241,7 @@ public class PPU extends MemoryMapped {
         if (address >= 0x2000 && address < 0x3F00)
             nametableMemory[(address & 0xC00) >>> 10][address & 0x3FF] = value;
         else if (address >= 0x3F00)
-            paletteMemory[address & 0x1F] = value;
+            writeByteToPaletteMemory(address & 0x1F, value);
         else
             throw new UnsupportedOperationException("Unsupported PPUADDR address " +
                     String.format("%04X", address));
@@ -236,7 +262,9 @@ public class PPU extends MemoryMapped {
                 return regOAMDATA;
             }
             case 7 -> {
-                return regPPUDATA;
+                byte value = readByteFromPPUADDR();
+                regPPUADDR.twoByteValue += regPPUCTRL.nametableAddressIncrement;
+                return value;
             }
             default -> throw new UnsupportedOperationException("Unsupported PPU register 0x" +
                     String.format("%04X", address));
@@ -253,7 +281,6 @@ public class PPU extends MemoryMapped {
             case 5 -> regPPUSCROLL.update(value);
             case 6 -> regPPUADDR.update(value);
             case 7 -> {
-                regPPUDATA = value;
                 writeByteAtPPUADDR(value);
                 regPPUADDR.twoByteValue += regPPUCTRL.nametableAddressIncrement;
             }

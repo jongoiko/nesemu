@@ -17,9 +17,9 @@ public class NES {
     public NES(String cartridgeFilePath) throws IOException {
         addressSpace = new AddressSpace();
         cpu = new CPU();
-        ppu = new PPU();
         ram = new RAM();
         cartridge = Cartridge.fromINESFile(cartridgeFilePath);
+        ppu = new PPU(cartridge);
         frameBuffer = new Color[SCREEN_HEIGHT_PX][SCREEN_WIDTH_PX];
         addressSpace.addDevice(cartridge);
         addressSpace.addDevice(ppu);
@@ -30,9 +30,9 @@ public class NES {
 
     public void runUntilFrameReady() {
         while (!ppu.isFrameReady) {
-            ppu.clockTick(frameBuffer, cpu, cartridge);
-            ppu.clockTick(frameBuffer, cpu, cartridge);
-            ppu.clockTick(frameBuffer, cpu, cartridge);
+            ppu.clockTick(frameBuffer, cpu);
+            ppu.clockTick(frameBuffer, cpu);
+            ppu.clockTick(frameBuffer, cpu);
             cpu.clockTick();
         }
         ppu.isFrameReady = false;
