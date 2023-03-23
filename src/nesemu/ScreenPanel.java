@@ -6,7 +6,7 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 public class ScreenPanel extends javax.swing.JPanel {
-    private static final int PIXEL_SIZE = 1;
+    private static final int PIXEL_SIZE = 2;
 
     BufferedImage img;
 
