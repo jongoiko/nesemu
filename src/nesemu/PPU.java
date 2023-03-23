@@ -7,7 +7,6 @@ public class PPU extends MemoryMapped {
     private final static int PALETTE_MEM_SIZE = 32;
     private final static int NAMETABLE_SIZE = 1024;
     private final static int OAM_SIZE = 256;
-    private final static int NAMETABLE_ATTRIBUTE_TABLE_INDEX = 960;
 
     private final static Color[] SYSTEM_PALETTE = new Color[] {
         new Color(84, 84, 84),    new Color(0, 30, 116),    new Color(8, 16, 144),    new Color(48, 0, 136),
@@ -37,49 +36,35 @@ public class PPU extends MemoryMapped {
     private final PPUMASK regPPUMASK;
     private final PPUSTATUS regPPUSTATUS;
     private byte regOAMADDR;
-    private final TwoByteRegister regPPUSCROLL;
-    private final TwoByteRegister regPPUADDR;
     private byte regPPUDATA;
 
     private int scanline;
     private int column;
     public boolean isFrameReady;
 
+    private short vramAddress;
+    private short tempVramAddress;
+    private int fineXScroll;
+    private boolean firstByteWritten;
+
+    private byte nextTilePatternLowByte;
+    private byte nextTilePatternHighByte;
+    private int nextTileAttribute;
+    private int nextTileNumber;
+    private short patternLowByteShiftRegister;
+    private short patternHighByteShiftRegister;
+    private short attributeLowByteShiftRegister;
+    private short attributeHighByteShiftRegister;
+
     public PPU(Cartridge cartridge) {
         this.cartridge = cartridge;
+        scanline = -1;
         paletteMemory = new byte[PALETTE_MEM_SIZE];
         nametableMemory = new byte[4][NAMETABLE_SIZE];
         oamMemory = new byte[OAM_SIZE];
         regPPUCTRL = new PPUCTRL(0, 1, 0, 0, 8, true, false);
         regPPUMASK = new PPUMASK(false, false, false, false, false, false, false, false);
         regPPUSTATUS = new PPUSTATUS(false, false, false);
-        regPPUADDR = new TwoByteRegister((short)0);
-        regPPUSCROLL = new TwoByteRegister((short)0);
-    }
-
-    public void clockTick(BufferedImage img, CPU cpu) {
-        if (scanline < 240 && column < 256) {
-            if (regPPUMASK.showBackground)
-                renderTile(img);
-        }
-        column++;
-        if (column >= 256 && column <= 319 && scanline < 240)
-            regOAMADDR = 0;
-        if (column >= 340) {
-            column = 0;
-            scanline++;
-        }
-        if (scanline >= 240) {
-            if (scanline == 240 && column == 0) {
-                isFrameReady = true;
-                if (regPPUCTRL.generateNMIOnVBlank)
-                    cpu.requestNMI = true;
-            }
-            regPPUSTATUS.verticalBlank = true;
-        } else
-            regPPUSTATUS.verticalBlank = false;
-        if (scanline >= 261)
-            scanline = 0;
     }
 
     private class PPUCTRL {
@@ -167,52 +152,165 @@ public class PPU extends MemoryMapped {
         }
     }
 
-    private class TwoByteRegister {
-        public short twoByteValue;
-        private boolean upperByteSet;
-
-        public TwoByteRegister(short twoByteValue) {
-            this.twoByteValue = twoByteValue;
-            this.upperByteSet = false;
+    public void clockTick(BufferedImage img, CPU cpu) {
+        if (scanline >= -1 && scanline < 240) {
+            if (scanline == -1 && column == 1)
+                regPPUSTATUS.verticalBlank = false;
+            if ((column >= 1 && column <= 257) || (column >= 321 && column <= 336)) {
+                shiftRegisters();
+                switch ((column - 1) % 8) {
+                    case 0 -> {
+                        loadLatchesIntoShiftRegisters();
+                        readNametableByte();
+                    }
+                    case 2 -> readAttribute();
+                    case 4 -> readPatternLowByte();
+                    case 6 -> readPatternHighByte();
+                    case 7 -> increaseHorizontalVramAddress();
+                }
+            }
+            if (column == 256)
+                increaseVerticalVramAddress();
+            if (column == 257)
+                copyHorizontalPosition();
+            if (scanline >= 0 && column >= 1) {
+                if (regPPUMASK.showBackground)
+                    renderBackgroundPixel(img);
+            }
         }
+        if (column >= 257 && column <= 320 && scanline < 240)
+            regOAMADDR = 0;
+        if (scanline == -1 && column >= 280 && column <= 304)
+            copyVerticalPosition();
+        else if (scanline == 241 && column == 1) {
+            regPPUSTATUS.verticalBlank = true;
+            isFrameReady = true;
+            if (regPPUCTRL.generateNMIOnVBlank)
+                cpu.requestNMI = true;
+        }
+        column++;
+        if (column > 340) {
+            column = 0;
+            scanline++;
+        }
+        if (scanline > 260)
+            scanline = -1;
+    }
 
-        public void update(byte value) {
-            if (upperByteSet)
-                twoByteValue |= Byte.toUnsignedInt(value);
-            else
-                twoByteValue = (short)(value << 8);
-            upperByteSet = !upperByteSet;
+    private void shiftRegisters() {
+        patternLowByteShiftRegister <<= 1;
+        patternHighByteShiftRegister <<= 1;
+        attributeLowByteShiftRegister <<= 1;
+        attributeHighByteShiftRegister <<= 1;
+    }
+
+    private void loadLatchesIntoShiftRegisters() {
+        patternLowByteShiftRegister &= 0xFF00;
+        patternLowByteShiftRegister |= nextTilePatternLowByte & 0xFF;
+        patternHighByteShiftRegister &= 0xFF00;
+        patternHighByteShiftRegister |= nextTilePatternHighByte & 0xFF;
+        attributeLowByteShiftRegister &= 0xFF00;
+        attributeLowByteShiftRegister |= (nextTileAttribute & 1) != 0 ? 0xFF : 0;
+        attributeHighByteShiftRegister &= 0xFF00;
+        attributeHighByteShiftRegister |= (nextTileAttribute & 2) != 0 ? 0xFF : 0;
+    }
+
+    private boolean isRenderingEnabled() {
+        return regPPUMASK.showBackground || regPPUMASK.showSprites;
+    }
+
+    private void readNametableByte() {
+        int tileNumberAddress = 0x2000 | (vramAddress & 0xFFF);
+        nextTileNumber = nametableMemory[(tileNumberAddress & 0xC00) >>> 10]
+                [tileNumberAddress & 0x3FF];
+    }
+
+    private void readAttribute() {
+        int attributeByteAddress = 0x23C0 | (vramAddress & 0x0C00) |
+                ((vramAddress >>> 4) & 0x38) | ((vramAddress >>> 2) & 7);
+        byte attributeByte = nametableMemory[(attributeByteAddress & 0xC00) >>> 10]
+                [attributeByteAddress & 0x3FF];
+        int regionNumberY = (vramAddress & 2) != 0 ? 1 : 0;
+        int regionNumberX = (vramAddress & 64) != 0 ? 1 : 0;
+        if (regionNumberX == 0 && regionNumberY == 0)
+            nextTileAttribute = attributeByte & 3;
+        else if (regionNumberX == 0 && regionNumberY == 1)
+            nextTileAttribute = (attributeByte >>> 2) & 3;
+        else if (regionNumberX == 1 && regionNumberY == 0)
+            nextTileAttribute = (attributeByte >>> 4) & 3;
+        else
+            nextTileAttribute = (attributeByte >>> 6) & 3;
+    }
+
+    private void readPatternLowByte() {
+        int patternByteAddress = nextTileNumber * 16 + (vramAddress >>> 12);
+        if (regPPUCTRL.backgroundPatternTableAddress != 0)
+            patternByteAddress |= 0x1000;
+        nextTilePatternLowByte = cartridge.ppuReadByte((short)patternByteAddress);
+    }
+
+    private void readPatternHighByte() {
+        int patternByteAddress = nextTileNumber * 16 + 8 + (vramAddress >>> 12);
+        if (regPPUCTRL.backgroundPatternTableAddress != 0)
+            patternByteAddress |= 0x1000;
+        nextTilePatternHighByte = cartridge.ppuReadByte((short)patternByteAddress);
+    }
+
+    private void increaseHorizontalVramAddress() {
+        if (isRenderingEnabled()) {
+            if ((vramAddress & 0x1F) == 31) {
+                vramAddress &= ~0x1F;
+                vramAddress ^= 0x400;
+            } else
+                vramAddress++;
         }
     }
 
-    private void renderTile(BufferedImage img) {
-        int tileNumber = nametableMemory[regPPUCTRL.baseNametableAddress]
-                [(scanline / 8) * 32 + column / 8];
-        int pixelAddress = (tileNumber * 16) + scanline % 8;
-        if (regPPUCTRL.backgroundPatternTableAddress == 1)
-            pixelAddress |= 0x1000;
-        int lsb = (cartridge.ppuReadByte((short)(pixelAddress)) >>> (7 - column % 8)) & 1;
-        int msb = (cartridge.ppuReadByte((short)(pixelAddress + 8)) >>> (7 - column % 8)) & 1;
-        int colorNum = lsb + 2 * msb;
-        int colorCode = readByteFromPaletteMemory(getPaletteNumber() * 4 + colorNum);
+    private void increaseVerticalVramAddress() {
+        if (isRenderingEnabled()) {
+            if ((vramAddress & 0x7000) != 0x7000)
+                vramAddress += 0x1000;
+            else {
+                vramAddress &= ~0x7000;
+                int coarseY = (vramAddress & 0x3E0) >>> 5;
+                switch (coarseY) {
+                    case 29 -> {
+                        coarseY = 0;
+                        vramAddress ^= 0x800;
+                    }
+                    case 31 -> coarseY = 0;
+                    default -> coarseY++;
+                }
+                vramAddress &= ~0x3E0;
+                vramAddress |= coarseY << 5;
+            }
+        }
+    }
+
+    private void copyHorizontalPosition() {
+        if (isRenderingEnabled()) {
+            vramAddress &= ~0x41F;
+            vramAddress |= tempVramAddress & 0x41F;
+        }
+    }
+
+    private void copyVerticalPosition() {
+        if (isRenderingEnabled()) {
+            vramAddress &= ~0x7BE0;
+            vramAddress |= tempVramAddress & 0x7BE0;
+        }
+    }
+    private void renderBackgroundPixel(BufferedImage img) {
+        int pixel = 0x8000 >>> fineXScroll;
+        int colorIndex = ((patternLowByteShiftRegister & pixel) != 0 ? 1 : 0) +
+                2 * ((patternHighByteShiftRegister & pixel) != 0 ? 1 : 0);
+        int attribute = ((attributeLowByteShiftRegister & pixel) != 0 ? 1 : 0) +
+                2 * ((attributeHighByteShiftRegister & pixel) != 0 ? 1 : 0);
+        int colorCode = readByteFromPaletteMemory(attribute * 4 + colorIndex);
+        // TODO: color tinting/emphasis using PPUMASK
         if (regPPUMASK.grayscale && (colorCode & 0xF) < 0xD)
             colorCode &= 0xF0;
-        img.setRGB(column, scanline, SYSTEM_PALETTE[colorCode].getRGB());
-    }
-
-    private int getPaletteNumber() {
-        int attributeAddress = NAMETABLE_ATTRIBUTE_TABLE_INDEX +
-                (scanline / 32) * 8 + column / 32;
-        byte attributeByte = nametableMemory[regPPUCTRL.baseNametableAddress]
-                [attributeAddress];
-        int regionNumberX = (scanline / 16) % 2, regionNumberY = (column / 16) % 2;
-        if (regionNumberX == 0 && regionNumberY == 0)
-            return attributeByte & 3;
-        if (regionNumberX == 0 && regionNumberY == 1)
-            return (attributeByte >>> 2) & 3;
-        if (regionNumberX == 1 && regionNumberY == 0)
-            return (attributeByte >>> 4) & 3;
-        return (attributeByte >>> 6) & 3;
+        img.setRGB(column - 1, scanline, SYSTEM_PALETTE[colorCode].getRGB());
     }
 
     private byte readByteFromPaletteMemory(int address) {
@@ -228,20 +326,19 @@ public class PPU extends MemoryMapped {
             paletteMemory[address] = value;
     }
 
-    private byte readByteFromPPUADDR() {
-        short address = regPPUADDR.twoByteValue;
-        if (address >= 0x3F00)
-            return readByteFromPaletteMemory(address & 0x1F);
+    private byte readByteFromVramAddress() {
+        if (vramAddress >= 0x3F00)
+            return readByteFromPaletteMemory(vramAddress & 0x1F);
         byte buffer = regPPUDATA;
-        if (address < 0x2000)
-            regPPUDATA = cartridge.ppuReadByte(address);
-        else if (address >= 0x2000 && address < 0x3F00)
-            regPPUDATA =  nametableMemory[(address & 0xC00) >>> 10][address & 0x3FF];
+        if (vramAddress < 0x2000)
+            regPPUDATA = cartridge.ppuReadByte(vramAddress);
+        else if (vramAddress >= 0x2000 && vramAddress < 0x3F00)
+            regPPUDATA =  nametableMemory[(vramAddress & 0xC00) >>> 10][vramAddress & 0x3FF];
         return buffer;
     }
 
-    private void writeByteAtPPUADDR(byte value) {
-        short address = (short)(regPPUADDR.twoByteValue & 0x3FFF);
+    private void writeByteAtVramAddress(byte value) {
+        short address = (short)(vramAddress & 0x3FFF);
         //if (address < 0x2000)
         //    patternMemory[(address & 0x1000) >>> 12][address & 0xFFF] = value;
         //else
@@ -263,14 +360,15 @@ public class PPU extends MemoryMapped {
     byte readByteFromDevice(short address) {
         switch (address & 7) {
             case 2 -> {
+                firstByteWritten = false;
                 return regPPUSTATUS.toByte();
             }
             case 4 -> {
                 return oamMemory[Byte.toUnsignedInt(regOAMADDR)];
             }
             case 7 -> {
-                byte value = readByteFromPPUADDR();
-                regPPUADDR.twoByteValue += regPPUCTRL.nametableAddressIncrement;
+                byte value = readByteFromVramAddress();
+                vramAddress += regPPUCTRL.nametableAddressIncrement;
                 return value;
             }
             default -> throw new UnsupportedOperationException("Unsupported PPU register 0x" +
@@ -281,18 +379,43 @@ public class PPU extends MemoryMapped {
     @Override
     void writeByteToDevice(short address, byte value) {
         switch (address & 7) {
-            case 0 -> regPPUCTRL.update(value);
+            case 0 -> {
+                tempVramAddress &= ~0xC00;
+                tempVramAddress |= (value & 3) << 10;
+                regPPUCTRL.update(value);
+            }
             case 1 -> regPPUMASK.update(value);
             case 3 -> regOAMADDR = value;
             case 4 -> {
                 oamMemory[Byte.toUnsignedInt(regOAMADDR)] = value;
                 regOAMADDR++;
             }
-            case 5 -> regPPUSCROLL.update(value);
-            case 6 -> regPPUADDR.update(value);
+            case 5 -> {
+                if (firstByteWritten) {
+                    tempVramAddress &= ~0x73E0;
+                    tempVramAddress |= (value & 7) << 12;
+                    tempVramAddress |= (value & 0xF8) << 2;
+                } else {
+                    tempVramAddress &= ~0x1F;
+                    tempVramAddress |= (value & 0xF8) >>> 3;
+                    fineXScroll = value & 7;
+                }
+                firstByteWritten = !firstByteWritten;
+            }
+            case 6 -> {
+                if (firstByteWritten) {
+                    tempVramAddress &= ~0xFF;
+                    tempVramAddress |= Byte.toUnsignedInt(value);
+                    vramAddress = tempVramAddress;
+                } else {
+                    tempVramAddress &= 0xFF;
+                    tempVramAddress |= (value & 0x3F) << 8;
+                }
+                firstByteWritten = !firstByteWritten;
+            }
             case 7 -> {
-                writeByteAtPPUADDR(value);
-                regPPUADDR.twoByteValue += regPPUCTRL.nametableAddressIncrement;
+                writeByteAtVramAddress(value);
+                vramAddress += regPPUCTRL.nametableAddressIncrement;
             }
             default -> throw new UnsupportedOperationException("Unsupported PPU register 0x" +
                     String.format("%04X", address));

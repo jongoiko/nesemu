@@ -12,7 +12,7 @@ public class ScreenPanel extends javax.swing.JPanel {
 
     @Override
     public void paint(Graphics g) {
-        g.drawImage(img, 0, 0, null);
+        g.drawImage(img, 0, 0, 2 * img.getWidth(), 2 * img.getHeight(), null);
     }
 
     @SuppressWarnings("unchecked")
