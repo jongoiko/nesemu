@@ -1,6 +1,7 @@
 package nesemu;
 
 import java.awt.Color;
+import java.awt.event.KeyEvent;
 import java.io.IOException;
 
 public class NES {
@@ -12,6 +13,7 @@ public class NES {
     private final PPU ppu;
     private final RAM ram;
     private final Cartridge cartridge;
+    public final Controller controller;
     public final Color[][] frameBuffer;
 
     public NES(String cartridgeFilePath) throws IOException {
@@ -20,10 +22,12 @@ public class NES {
         ram = new RAM();
         cartridge = Cartridge.fromINESFile(cartridgeFilePath);
         ppu = new PPU(cartridge);
+        controller = new Controller();
         frameBuffer = new Color[SCREEN_HEIGHT_PX][SCREEN_WIDTH_PX];
         addressSpace.addDevice(cartridge);
         addressSpace.addDevice(ppu);
         addressSpace.addDevice(ram);
+        addressSpace.addDevice(controller);
         addressSpace.addDevice(cpu);
         cpu.reset();
     }

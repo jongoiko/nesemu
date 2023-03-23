@@ -7,6 +7,7 @@ import javax.swing.JLabel;
 public class MainFrame extends javax.swing.JFrame {
     private static final int TARGET_FPS = 60;
     private static final int NANOSECS_PER_FRAME = (int)((1.0 / TARGET_FPS) * 1000000000);
+    private NES nes;
 
     final ScreenPanel panel;
     final javax.swing.JLabel fpsLabel;
@@ -27,6 +28,14 @@ public class MainFrame extends javax.swing.JFrame {
         jLabel2 = fpsLabel;
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                formKeyPressed(evt);
+            }
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                formKeyReleased(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -70,21 +79,29 @@ public class MainFrame extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    private void formKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_formKeyPressed
+        nes.controller.keyPressed(evt);
+    }//GEN-LAST:event_formKeyPressed
+
+    private void formKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_formKeyReleased
+        nes.controller.keyReleased(evt);
+    }//GEN-LAST:event_formKeyReleased
+
     public static void main(String args[]) throws IOException {
         MainFrame mf = new MainFrame();
         mf.setLocationRelativeTo(null);
         mf.setVisible(true);
 
-        NES nes = new NES("/home/jon/UPNA/y2/s2/ap/project/roms/nestest.nes");
+        mf.nes = new NES("/home/jon/UPNA/y2/s2/ap/project/roms/nestest.nes");
 
         long frames = 0;
         long startTime = System.currentTimeMillis();
         final DecimalFormat df = new DecimalFormat("0.00");
         while (true) {
             long frameStartTime = System.nanoTime(), frameEndTime;
-            nes.runUntilFrameReady();
+            mf.nes.runUntilFrameReady();
             frames++;
-            mf.panel.renderFrameBuffer(nes.frameBuffer);
+            mf.panel.renderFrameBuffer(mf.nes.frameBuffer);
             mf.repaint();
             long timeEllapsedMilliseconds = System.currentTimeMillis() - startTime;
             double fps = frames / ((double)timeEllapsedMilliseconds / 1000);
