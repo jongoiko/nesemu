@@ -3,11 +3,11 @@ package nesemu;
 import java.awt.Color;
 
 public class PPU extends MemoryMapped {
-    // TODO: OAM DMA
-
     private final static int PALETTE_MEM_SIZE = 32;
     private final static int NAMETABLE_SIZE = 1024;
+    private final static int OAM_SIZE = 256;
     private final static int NAMETABLE_ATTRIBUTE_TABLE_INDEX = 960;
+
     private final static Color[] SYSTEM_PALETTE = new Color[] {
         new Color(84, 84, 84),    new Color(0, 30, 116),    new Color(8, 16, 144),    new Color(48, 0, 136),
         new Color(68, 0, 100),    new Color(92, 0, 48),     new Color(84, 4, 0),      new Color(60, 24, 0),
@@ -30,12 +30,12 @@ public class PPU extends MemoryMapped {
     private final Cartridge cartridge;
     private final byte paletteMemory[];
     private final byte nametableMemory[][];
+    private final byte oamMemory[];
 
     private final PPUCTRL regPPUCTRL;
     private final PPUMASK regPPUMASK;
     private final PPUSTATUS regPPUSTATUS;
     private byte regOAMADDR;
-    private byte regOAMDATA;
     private final TwoByteRegister regPPUSCROLL;
     private final TwoByteRegister regPPUADDR;
     private byte regPPUDATA;
@@ -48,6 +48,7 @@ public class PPU extends MemoryMapped {
         this.cartridge = cartridge;
         paletteMemory = new byte[PALETTE_MEM_SIZE];
         nametableMemory = new byte[4][NAMETABLE_SIZE];
+        oamMemory = new byte[OAM_SIZE];
         regPPUCTRL = new PPUCTRL(0, 1, 0, 0, 8, true, false);
         regPPUMASK = new PPUMASK(false, false, false, false, false, false, false, false);
         regPPUSTATUS = new PPUSTATUS(false, false, false);
@@ -61,6 +62,8 @@ public class PPU extends MemoryMapped {
                 renderTile(frameBuffer);
         }
         column++;
+        if (column >= 256 && column <= 319 && scanline < 240)
+            regOAMADDR = 0;
         if (column >= 341) {
             column = 0;
             scanline++;
@@ -262,7 +265,7 @@ public class PPU extends MemoryMapped {
                 return regPPUSTATUS.toByte();
             }
             case 4 -> {
-                return regOAMDATA;
+                return oamMemory[Byte.toUnsignedInt(regOAMADDR)];
             }
             case 7 -> {
                 byte value = readByteFromPPUADDR();
@@ -279,8 +282,11 @@ public class PPU extends MemoryMapped {
         switch (address & 7) {
             case 0 -> regPPUCTRL.update(value);
             case 1 -> regPPUMASK.update(value);
-            case 2 -> regOAMADDR = value;
-            case 4 -> regOAMDATA = value;
+            case 3 -> regOAMADDR = value;
+            case 4 -> {
+                oamMemory[Byte.toUnsignedInt(regOAMADDR)] = value;
+                regOAMADDR++;
+            }
             case 5 -> regPPUSCROLL.update(value);
             case 6 -> regPPUADDR.update(value);
             case 7 -> {
