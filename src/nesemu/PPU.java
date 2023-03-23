@@ -64,7 +64,7 @@ public class PPU extends MemoryMapped {
         column++;
         if (column >= 256 && column <= 319 && scanline < 240)
             regOAMADDR = 0;
-        if (column >= 341) {
+        if (column >= 340) {
             column = 0;
             scanline++;
         }
