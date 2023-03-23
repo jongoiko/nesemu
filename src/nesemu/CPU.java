@@ -8,6 +8,10 @@ public class CPU extends MemoryMapped {
     private byte regP;
     private short regPC;
 
+    private byte regOAMDMA;
+    private int dmaCyclesLeft;
+    private byte dmaBuffer;
+
     private short cyclesUntilNextInstruction;
     private short operandEffectiveAddress;
     private boolean isMemoryOperand;
@@ -34,7 +38,7 @@ public class CPU extends MemoryMapped {
 
     @Override
     boolean addressIsMapped(short address) {
-        return false;
+        return address == 0x4014;
     }
 
     @Override
@@ -44,6 +48,8 @@ public class CPU extends MemoryMapped {
 
     @Override
     void writeByteToDevice(short address, byte value) {
+        regOAMDMA = value;
+        dmaCyclesLeft = 512;
     }
 
     private enum StatusFlag {
@@ -91,6 +97,15 @@ public class CPU extends MemoryMapped {
     }
 
     public void clockTick() {
+        if (dmaCyclesLeft > 0) {
+            if (dmaCyclesLeft % 2 == 0) {
+                int address = (regOAMDMA << 8) + 256 - (dmaCyclesLeft / 2);
+                dmaBuffer = addressSpace.readByte((short)address);
+            } else
+                addressSpace.writeByte((short)0x2004, dmaBuffer);
+            dmaCyclesLeft--;
+            return;
+        }
         if (cyclesUntilNextInstruction <= 0) {
             // Check for interrupts, etc.
             if (requestNMI)
