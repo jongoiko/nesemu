@@ -1,6 +1,7 @@
 package nesemu;
 
 import java.awt.Color;
+import java.awt.image.BufferedImage;
 
 public class PPU extends MemoryMapped {
     private final static int PALETTE_MEM_SIZE = 32;
@@ -56,10 +57,10 @@ public class PPU extends MemoryMapped {
         regPPUSCROLL = new TwoByteRegister((short)0);
     }
 
-    public void clockTick(Color[][] frameBuffer, CPU cpu) {
+    public void clockTick(BufferedImage img, CPU cpu) {
         if (scanline < 240 && column < 256) {
             if (regPPUMASK.showBackground)
-                renderTile(frameBuffer);
+                renderTile(img);
         }
         column++;
         if (column >= 256 && column <= 319 && scanline < 240)
@@ -184,7 +185,7 @@ public class PPU extends MemoryMapped {
         }
     }
 
-    private void renderTile(Color[][] frameBuffer) {
+    private void renderTile(BufferedImage img) {
         int tileNumber = nametableMemory[regPPUCTRL.baseNametableAddress]
                 [(scanline / 8) * 32 + column / 8];
         int pixelAddress = (tileNumber * 16) + scanline % 8;
@@ -196,7 +197,7 @@ public class PPU extends MemoryMapped {
         int colorCode = readByteFromPaletteMemory(getPaletteNumber() * 4 + colorNum);
         if (regPPUMASK.grayscale && (colorCode & 0xF) < 0xD)
             colorCode &= 0xF0;
-        frameBuffer[scanline][column] = SYSTEM_PALETTE[colorCode];
+        img.setRGB(column, scanline, SYSTEM_PALETTE[colorCode].getRGB());
     }
 
     private int getPaletteNumber() {
