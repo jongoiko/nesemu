@@ -1,6 +1,7 @@
 package nesemu;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AddressSpace {
     private final List<MemoryMapped> devices;
