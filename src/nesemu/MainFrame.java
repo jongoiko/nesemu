@@ -92,7 +92,7 @@ public class MainFrame extends javax.swing.JFrame {
         mf.setLocationRelativeTo(null);
         mf.setVisible(true);
 
-        mf.nes = new NES("/home/jon/UPNA/y2/s2/ap/project/roms/nestest.nes");
+        mf.nes = new NES("roms/nestest.nes");
 
         long frames = 0;
         long startTime = System.currentTimeMillis();
