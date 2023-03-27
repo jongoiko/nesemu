@@ -63,13 +63,12 @@ public class PPU extends MemoryMapped {
         paletteMemory = new byte[PALETTE_MEM_SIZE];
         nametableMemory = new byte[4][NAMETABLE_SIZE];
         oamMemory = new byte[OAM_SIZE];
-        regPPUCTRL = new PPUCTRL(0, 1, 0, 0, 8, true, false);
+        regPPUCTRL = new PPUCTRL(1, 0, 0, 8, true, false);
         regPPUMASK = new PPUMASK(false, false, false, false, false, false, false, false);
         regPPUSTATUS = new PPUSTATUS(false, false, false);
     }
 
     private class PPUCTRL {
-        public int baseNametableAddress;            // 0 to 3
         public int nametableAddressIncrement;       // 1 or 32
         public int spritePatternTableAddress;       // 0 or 1
         public int backgroundPatternTableAddress;   // 0 or 1
@@ -77,10 +76,9 @@ public class PPU extends MemoryMapped {
         public boolean isSlave;
         public boolean generateNMIOnVBlank;
 
-        public PPUCTRL(int nametableAddress, int nametableAddressIncrement,
-                int spritePatternTableAddress, int backgroundPatternTableAddress,
-                int spriteRowCount, boolean isSlave, boolean generateNMIOnVBlank) {
-            this.baseNametableAddress = nametableAddress;
+        public PPUCTRL(int nametableAddressIncrement, int spritePatternTableAddress,
+                int backgroundPatternTableAddress, int spriteRowCount, boolean isSlave,
+                boolean generateNMIOnVBlank) {
             this.nametableAddressIncrement = nametableAddressIncrement;
             this.spritePatternTableAddress = spritePatternTableAddress;
             this.backgroundPatternTableAddress = backgroundPatternTableAddress;
@@ -90,7 +88,6 @@ public class PPU extends MemoryMapped {
         }
 
         public void update(byte flags) {
-            baseNametableAddress = flags & 3;
             nametableAddressIncrement = (flags & 4) != 0 ? 32 : 1;
             spritePatternTableAddress = (flags & 8) >> 3;
             backgroundPatternTableAddress = (flags & 16) >> 4;
