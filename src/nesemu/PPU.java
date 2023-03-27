@@ -40,6 +40,7 @@ public class PPU extends MemoryMapped {
 
     private int scanline;
     private int column;
+    private int frameCount;
     public boolean isFrameReady;
 
     private short vramAddress;
@@ -177,6 +178,9 @@ public class PPU extends MemoryMapped {
                 if (regPPUMASK.showBackground)
                     renderBackgroundPixel(img);
             }
+        } else if (scanline == 260 && column == 340 && frameCount % 2 != 0) {
+            scanline = -1;
+            column = 0;
         }
         if (column >= 257 && column <= 320 && scanline < 240)
             regOAMADDR = 0;
@@ -185,6 +189,7 @@ public class PPU extends MemoryMapped {
         else if (scanline == 241 && column == 1) {
             regPPUSTATUS.verticalBlank = true;
             isFrameReady = true;
+            frameCount++;
             if (regPPUCTRL.generateNMIOnVBlank)
                 cpu.requestNMI = true;
         }
