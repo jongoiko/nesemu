@@ -220,16 +220,14 @@ public class PPU extends MemoryMapped {
     }
 
     private void readNametableByte() {
-        int tileNumberAddress = 0x2000 | (vramAddress & 0xFFF);
-        nextTileNumber = nametableMemory[(tileNumberAddress & 0xC00) >>> 10]
-                [tileNumberAddress & 0x3FF];
+        int tileNumberAddress = vramAddress & 0xFFF;
+        nextTileNumber = readByteFromNametableMemory(tileNumberAddress);
     }
 
     private void readAttribute() {
-        int attributeByteAddress = 0x23C0 | (vramAddress & 0x0C00) |
+        int attributeByteAddress = 0x3C0 | (vramAddress & 0x0C00) |
                 ((vramAddress >>> 4) & 0x38) | ((vramAddress >>> 2) & 7);
-        byte attributeByte = nametableMemory[(attributeByteAddress & 0xC00) >>> 10]
-                [attributeByteAddress & 0x3FF];
+        byte attributeByte = readByteFromNametableMemory(attributeByteAddress);
         int regionNumberY = (vramAddress & 2) != 0 ? 1 : 0;
         int regionNumberX = (vramAddress & 64) != 0 ? 1 : 0;
         if (regionNumberX == 0 && regionNumberY == 0)
@@ -326,6 +324,26 @@ public class PPU extends MemoryMapped {
             paletteMemory[address] = value;
     }
 
+    private byte readByteFromNametableMemory(int address) {
+        int nametableNumber;
+        switch (cartridge.mirroring) {
+            case HORIZONTAL -> nametableNumber = (address & 0x800) >>> 11;
+            case VERTICAL ->   nametableNumber = (address & 0x400) >>> 10;
+            default ->         nametableNumber = (address & 0xC00) >>> 10;
+        }
+        return nametableMemory[nametableNumber][address & 0x3FF];
+    }
+
+    private void writeByteToNametableMemory(int address, byte value) {
+        int nametableNumber;
+        switch (cartridge.mirroring) {
+            case HORIZONTAL -> nametableNumber = (address & 0x800) >>> 11;
+            case VERTICAL ->   nametableNumber = (address & 0x400) >>> 10;
+            default ->         nametableNumber = (address & 0xC00) >>> 10;
+        }
+        nametableMemory[nametableNumber][address & 0x3FF] = value;
+    }
+
     private byte readByteFromVramAddress() {
         if (vramAddress >= 0x3F00)
             return readByteFromPaletteMemory(vramAddress & 0x1F);
@@ -333,7 +351,7 @@ public class PPU extends MemoryMapped {
         if (vramAddress < 0x2000)
             regPPUDATA = cartridge.ppuReadByte(vramAddress);
         else if (vramAddress >= 0x2000 && vramAddress < 0x3F00)
-            regPPUDATA =  nametableMemory[(vramAddress & 0xC00) >>> 10][vramAddress & 0x3FF];
+            regPPUDATA = readByteFromNametableMemory(vramAddress & 0xFFF);
         return buffer;
     }
 
@@ -343,7 +361,7 @@ public class PPU extends MemoryMapped {
         //    patternMemory[(address & 0x1000) >>> 12][address & 0xFFF] = value;
         //else
         if (address >= 0x2000 && address < 0x3F00)
-            nametableMemory[(address & 0xC00) >>> 10][address & 0x3FF] = value;
+            writeByteToNametableMemory(address & 0xFFF, value);
         else if (address >= 0x3F00)
             writeByteToPaletteMemory(address & 0x1F, value);
         else

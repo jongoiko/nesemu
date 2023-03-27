@@ -10,10 +10,18 @@ public class Cartridge extends MemoryMapped {
 
     private final byte prgROM[];
     private final byte chrROM[];
+    public final Mirroring mirroring;
 
-    public Cartridge(byte[] prgROM, byte[] chrROM) {
+    public enum Mirroring {
+        HORIZONTAL,
+        VERTICAL,
+        FOUR_NAMETABLES
+    }
+
+    public Cartridge(byte[] prgROM, byte[] chrROM, Mirroring mirroring) {
         this.prgROM = prgROM;
         this.chrROM = chrROM;
+        this.mirroring = mirroring;
     }
 
     @Override
@@ -43,12 +51,20 @@ public class Cartridge extends MemoryMapped {
                 throw new IOException("Invalid iNES header");
         final byte prgROMSize = stream.readByte();
         final byte chrROMSize = stream.readByte();
-        final int mapperNumber = ((stream.readByte() & 0xFF00) >>> 4) |
-                (stream.readByte() & 0xFF00);
+        final byte flags6 = stream.readByte();
+        final byte flags7 = stream.readByte();
+        final int mapperNumber = ((flags6 & 0xF0) >>> 4) | (flags7 & 0xF0);
+        Mirroring mirroring;
+        if ((flags6 & 8) != 0)
+            mirroring = Mirroring.FOUR_NAMETABLES;
+        else if ((flags6 & 1) != 0)
+            mirroring = Mirroring.VERTICAL;
+        else
+            mirroring = Mirroring.HORIZONTAL;
         stream.readNBytes(8); // TODO
         // Assume no trainer
         byte prgROM[] = stream.readNBytes(PRG_ROM_BLOCK_SIZE * prgROMSize);
         byte chrROM[] = stream.readNBytes(CHR_ROM_BLOCK_SIZE * chrROMSize);
-        return new Cartridge(prgROM, chrROM);
+        return new Cartridge(prgROM, chrROM, mirroring);
     }
 }
