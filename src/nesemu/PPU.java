@@ -2,6 +2,7 @@ package nesemu;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 
 public class PPU extends MemoryMapped {
     private final static int PALETTE_MEM_SIZE = 32;
@@ -31,6 +32,7 @@ public class PPU extends MemoryMapped {
     private final byte paletteMemory[];
     private final byte nametableMemory[][];
     private final byte oamMemory[];
+    private final byte secondaryOamMemory[];
 
     private final PPUCTRL regPPUCTRL;
     private final PPUMASK regPPUMASK;
@@ -52,10 +54,15 @@ public class PPU extends MemoryMapped {
     private byte nextTilePatternHighByte;
     private int nextTileAttribute;
     private int nextTileNumber;
-    private short patternLowByteShiftRegister;
-    private short patternHighByteShiftRegister;
-    private short attributeLowByteShiftRegister;
-    private short attributeHighByteShiftRegister;
+    private short tilePatternLowByteShiftRegister;
+    private short tilePatternHighByteShiftRegister;
+    private short tileAttributeLowByteShiftRegister;
+    private short tileAttributeHighByteShiftRegister;
+
+    private final byte spritePatternLowByteShiftRegisters[];
+    private final byte spritePatternHighByteShiftRegisters[];
+    private final byte spriteAttributes[];
+    private final byte spriteXPositions[];
 
     public PPU(Cartridge cartridge) {
         this.cartridge = cartridge;
@@ -63,6 +70,11 @@ public class PPU extends MemoryMapped {
         paletteMemory = new byte[PALETTE_MEM_SIZE];
         nametableMemory = new byte[4][NAMETABLE_SIZE];
         oamMemory = new byte[OAM_SIZE];
+        secondaryOamMemory = new byte[OAM_SIZE / 8];
+        spritePatternLowByteShiftRegisters = new byte[8];
+        spritePatternHighByteShiftRegisters = new byte[8];
+        spriteAttributes = new byte[8];
+        spriteXPositions = new byte[8];
         regPPUCTRL = new PPUCTRL(1, 0, 0, 8, true, false);
         regPPUMASK = new PPUMASK(false, false, false, false, false, false, false, false);
         regPPUSTATUS = new PPUSTATUS(false, false, false);
@@ -155,7 +167,7 @@ public class PPU extends MemoryMapped {
             if (scanline == -1 && column == 1)
                 regPPUSTATUS.verticalBlank = false;
             if ((column >= 1 && column <= 257) || (column >= 321 && column <= 336)) {
-                shiftRegisters();
+                shiftTileRegisters();
                 switch ((column - 1) % 8) {
                     case 0 -> {
                         loadLatchesIntoShiftRegisters();
@@ -169,11 +181,23 @@ public class PPU extends MemoryMapped {
             }
             if (column == 256)
                 increaseVerticalVramAddress();
-            if (column == 257)
+            if (column == 257) {
                 copyHorizontalPosition();
+                readSpriteData();
+            }
             if (scanline >= 0 && column >= 1) {
+                if (column == 1)
+                    clearSecondaryOam();
+                else if (column == 65)
+                    evaluateSprites();
                 if (regPPUMASK.showBackground)
                     renderBackgroundPixel(img);
+                if (regPPUMASK.showSprites)
+                    renderSpritePixel(img);
+                if (column < 255) {
+                    shiftSpriteRegisters();
+                    decrementSpritesXPositions();
+                }
             }
         } else if (scanline == 260 && column == 340 && frameCount % 2 != 0) {
             scanline = -1;
@@ -199,22 +223,31 @@ public class PPU extends MemoryMapped {
             scanline = -1;
     }
 
-    private void shiftRegisters() {
-        patternLowByteShiftRegister <<= 1;
-        patternHighByteShiftRegister <<= 1;
-        attributeLowByteShiftRegister <<= 1;
-        attributeHighByteShiftRegister <<= 1;
+    private void shiftTileRegisters() {
+        tilePatternLowByteShiftRegister <<= 1;
+        tilePatternHighByteShiftRegister <<= 1;
+        tileAttributeLowByteShiftRegister <<= 1;
+        tileAttributeHighByteShiftRegister <<= 1;
+    }
+
+    private void shiftSpriteRegisters() {
+        for (int i = 0; i < 8; i++) {
+            if (spriteXPositions[i] == 0) {
+                spritePatternLowByteShiftRegisters[i] <<= 1;
+                spritePatternHighByteShiftRegisters[i] <<= 1;
+            }
+        }
     }
 
     private void loadLatchesIntoShiftRegisters() {
-        patternLowByteShiftRegister &= 0xFF00;
-        patternLowByteShiftRegister |= nextTilePatternLowByte & 0xFF;
-        patternHighByteShiftRegister &= 0xFF00;
-        patternHighByteShiftRegister |= nextTilePatternHighByte & 0xFF;
-        attributeLowByteShiftRegister &= 0xFF00;
-        attributeLowByteShiftRegister |= (nextTileAttribute & 1) != 0 ? 0xFF : 0;
-        attributeHighByteShiftRegister &= 0xFF00;
-        attributeHighByteShiftRegister |= (nextTileAttribute & 2) != 0 ? 0xFF : 0;
+        tilePatternLowByteShiftRegister &= 0xFF00;
+        tilePatternLowByteShiftRegister |= nextTilePatternLowByte & 0xFF;
+        tilePatternHighByteShiftRegister &= 0xFF00;
+        tilePatternHighByteShiftRegister |= nextTilePatternHighByte & 0xFF;
+        tileAttributeLowByteShiftRegister &= 0xFF00;
+        tileAttributeLowByteShiftRegister |= (nextTileAttribute & 1) != 0 ? 0xFF : 0;
+        tileAttributeHighByteShiftRegister &= 0xFF00;
+        tileAttributeHighByteShiftRegister |= (nextTileAttribute & 2) != 0 ? 0xFF : 0;
     }
 
     private boolean isRenderingEnabled() {
@@ -300,17 +333,100 @@ public class PPU extends MemoryMapped {
             vramAddress |= tempVramAddress & 0x7BE0;
         }
     }
+
     private void renderBackgroundPixel(BufferedImage img) {
         int pixel = 0x8000 >>> fineXScroll;
-        int colorIndex = ((patternLowByteShiftRegister & pixel) != 0 ? 1 : 0) +
-                2 * ((patternHighByteShiftRegister & pixel) != 0 ? 1 : 0);
-        int attribute = ((attributeLowByteShiftRegister & pixel) != 0 ? 1 : 0) +
-                2 * ((attributeHighByteShiftRegister & pixel) != 0 ? 1 : 0);
+        int colorIndex = ((tilePatternLowByteShiftRegister & pixel) != 0 ? 1 : 0) +
+                2 * ((tilePatternHighByteShiftRegister & pixel) != 0 ? 1 : 0);
+        int attribute = ((tileAttributeLowByteShiftRegister & pixel) != 0 ? 1 : 0) +
+                2 * ((tileAttributeHighByteShiftRegister & pixel) != 0 ? 1 : 0);
         int colorCode = readByteFromPaletteMemory(attribute * 4 + colorIndex);
         // TODO: color tinting/emphasis using PPUMASK
         if (regPPUMASK.grayscale && (colorCode & 0xF) < 0xD)
             colorCode &= 0xF0;
         img.setRGB(column - 1, scanline, SYSTEM_PALETTE[colorCode].getRGB());
+    }
+
+    private void clearSecondaryOam() {
+        Arrays.fill(secondaryOamMemory, (byte)0xFF);
+    }
+
+    private void evaluateSprites() {
+        int spriteNumber = 0, visibleSpriteCount = 0;
+        while (spriteNumber < 64) {
+            int spriteAddress = spriteNumber * 4;
+            int secondarySpriteAddress = visibleSpriteCount * 4;
+            int yPosition = Byte.toUnsignedInt(oamMemory[spriteAddress]);
+            if (scanline >= yPosition && scanline < yPosition + 8) {
+                if (visibleSpriteCount < 8)
+                    for (int i = 0; i < 4; i++)
+                        secondaryOamMemory[secondarySpriteAddress + i] =
+                                oamMemory[spriteAddress + i];
+                visibleSpriteCount++;
+            }
+            if (visibleSpriteCount >= 9)
+                break;
+            spriteNumber++;
+        }
+        regPPUSTATUS.spriteOverflow = visibleSpriteCount == 9;
+    }
+
+    void readSpriteData() {
+        for (int i = 0; i < 8; i++) {
+            spriteAttributes[i] = secondaryOamMemory[i * 4 + 2];
+            boolean horizontalFlip = (spriteAttributes[i] & 0x40) != 0;
+            boolean verticalFlip = (spriteAttributes[i] & 0x80) != 0;
+            spriteXPositions[i] = secondaryOamMemory[i * 4 + 3];
+            int yPosition = Byte.toUnsignedInt(secondaryOamMemory[i * 4]);
+            // TODO: 16 pixel mode
+            int tileNumber = Byte.toUnsignedInt(secondaryOamMemory[i * 4 + 1]);
+            int patternByteAddress = tileNumber * 16;
+            patternByteAddress += verticalFlip ?
+                    7 - scanline + yPosition : scanline - yPosition;
+            if (regPPUCTRL.spritePatternTableAddress != 0)
+                patternByteAddress |= 0x1000;
+            byte lsb = cartridge.ppuReadByte((short)patternByteAddress);
+            byte msb = cartridge.ppuReadByte((short)(patternByteAddress + 8));
+            if (horizontalFlip) {
+                lsb = reverseBits(lsb);
+                msb = reverseBits(msb);
+            }
+            spritePatternLowByteShiftRegisters[i] = lsb;
+            spritePatternHighByteShiftRegisters[i] = msb;
+        }
+    }
+
+    private byte reverseBits(byte b) {
+        byte out = 0;
+        int in = Byte.toUnsignedInt(b);
+        for (int i = 0; i < 8; i++) {
+            out <<= 1;
+            out |= in & 1;
+            in >>>= 1;
+        }
+        return out;
+    }
+
+    private void decrementSpritesXPositions() {
+        for (int i = 0; i < spriteXPositions.length; i++)
+            if (spriteXPositions[i] != 0)
+                spriteXPositions[i]--;
+    }
+
+    private void renderSpritePixel(BufferedImage img) {
+        for (int i = 0; i < 8; i++) {
+            int xPosition = spriteXPositions[i];
+            if (xPosition == 0) {
+                byte lsb = spritePatternLowByteShiftRegisters[i];
+                byte msb = spritePatternHighByteShiftRegisters[i];
+                int colorIndex = ((lsb & 0x80) != 0 ? 1 : 0) +
+                        2 * ((msb & 0x80) != 0 ? 1 : 0);
+                int palette = spriteAttributes[i] & 3;
+                int colorCode = readByteFromPaletteMemory(16 + palette * 4 + colorIndex);
+                if (colorIndex != 0)
+                    img.setRGB(column - 1, scanline, SYSTEM_PALETTE[colorCode].getRGB());
+            }
+        }
     }
 
     private byte readByteFromPaletteMemory(int address) {
