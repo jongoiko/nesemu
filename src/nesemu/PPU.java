@@ -256,7 +256,7 @@ public class PPU extends MemoryMapped {
 
     private void readNametableByte() {
         int tileNumberAddress = vramAddress & 0xFFF;
-        nextTileNumber = readByteFromNametableMemory(tileNumberAddress);
+        nextTileNumber = Byte.toUnsignedInt(readByteFromNametableMemory(tileNumberAddress));
     }
 
     private void readAttribute() {
