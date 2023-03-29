@@ -100,7 +100,7 @@ public class CPU extends MemoryMapped {
 
     public void clockTick() {
         if (dmaCyclesLeft > 0) {
-            if (dmaCyclesLeft >= 512) {
+            if (dmaCyclesLeft <= 512) {
                 if (dmaCyclesLeft % 2 == 0) {
                     int address = (regOAMDMA << 8) + 256 - (dmaCyclesLeft / 2);
                     dmaBuffer = addressSpace.readByte((short)address);
