@@ -423,8 +423,10 @@ public class PPU extends MemoryMapped {
                         2 * ((msb & 0x80) != 0 ? 1 : 0);
                 int palette = spriteAttributes[i] & 3;
                 int colorCode = readByteFromPaletteMemory(16 + palette * 4 + colorIndex);
-                if (colorIndex != 0)
+                if (colorIndex != 0) {
                     img.setRGB(column - 1, scanline, SYSTEM_PALETTE[colorCode].getRGB());
+                    return;
+                }
             }
         }
     }
