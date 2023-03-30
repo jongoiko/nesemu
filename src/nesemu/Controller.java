@@ -46,9 +46,12 @@ public class Controller extends MemoryMapped {
 
     @Override
     byte readByteFromDevice(short address) {
-        int bit = buffer & 1;
-        buffer >>>= 1;
-        return (byte)bit;
+        if (address == 0x4016) {
+            int bit = buffer & 1;
+            buffer >>>= 1;
+            return (byte)bit;
+        }
+        return 0;
     }
 
     @Override
