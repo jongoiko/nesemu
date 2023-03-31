@@ -63,6 +63,10 @@ public class PPU extends MemoryMapped {
     private final byte spritePatternHighByteShiftRegisters[];
     private final byte spriteAttributes[];
     private final byte spriteXPositions[];
+    private boolean spriteHasPriorityOverBackground;
+
+    private int backgroundColorNumber;
+    private int spriteColorNumber;
 
     public PPU(Cartridge cartridge) {
         this.cartridge = cartridge;
@@ -190,10 +194,12 @@ public class PPU extends MemoryMapped {
                     clearSecondaryOam();
                 else if (column == 65)
                     evaluateSprites();
+                Color backgroundColor = null, spriteColor = null;
                 if (regPPUMASK.showBackground)
-                    renderBackgroundPixel(img);
+                    backgroundColor = getBackgroundPixelColor();
                 if (regPPUMASK.showSprites)
-                    renderSpritePixel(img);
+                    spriteColor = getSpritePixelColor();
+                renderPixel(backgroundColor, spriteColor, img);
                 if (column < 255) {
                     shiftSpriteRegisters();
                     decrementSpritesXPositions();
@@ -221,6 +227,17 @@ public class PPU extends MemoryMapped {
         }
         if (scanline > 260)
             scanline = -1;
+    }
+
+    private void renderPixel(Color backgroundColor, Color spriteColor, BufferedImage img) {
+        Color finalColor = new Color(0);
+        if (backgroundColor != null)
+            finalColor = backgroundColor;
+        if (spriteColor != null &&
+                (spriteColorNumber != 0 && spriteHasPriorityOverBackground ||
+                backgroundColorNumber == 0))
+            finalColor = spriteColor;
+        img.setRGB(column - 1, scanline, finalColor.getRGB());
     }
 
     private void shiftTileRegisters() {
@@ -334,9 +351,9 @@ public class PPU extends MemoryMapped {
         }
     }
 
-    private void renderBackgroundPixel(BufferedImage img) {
+    private Color getBackgroundPixelColor() {
         int pixel = 0x8000 >>> fineXScroll;
-        int colorIndex = ((tilePatternLowByteShiftRegister & pixel) != 0 ? 1 : 0) +
+        backgroundColorNumber = ((tilePatternLowByteShiftRegister & pixel) != 0 ? 1 : 0) +
                 2 * ((tilePatternHighByteShiftRegister & pixel) != 0 ? 1 : 0);
         int attribute = ((tileAttributeLowByteShiftRegister & pixel) != 0 ? 1 : 0) +
                 2 * ((tileAttributeHighByteShiftRegister & pixel) != 0 ? 1 : 0);
@@ -344,7 +361,7 @@ public class PPU extends MemoryMapped {
         // TODO: color tinting/emphasis using PPUMASK
         if (regPPUMASK.grayscale && (colorCode & 0xF) < 0xD)
             colorCode &= 0xF0;
-        img.setRGB(column - 1, scanline, SYSTEM_PALETTE[colorCode].getRGB());
+        return SYSTEM_PALETTE[colorCode];
     }
 
     private void clearSecondaryOam() {
