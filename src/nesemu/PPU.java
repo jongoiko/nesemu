@@ -357,7 +357,7 @@ public class PPU extends MemoryMapped {
                 2 * ((tilePatternHighByteShiftRegister & pixel) != 0 ? 1 : 0);
         int attribute = ((tileAttributeLowByteShiftRegister & pixel) != 0 ? 1 : 0) +
                 2 * ((tileAttributeHighByteShiftRegister & pixel) != 0 ? 1 : 0);
-        int colorCode = readByteFromPaletteMemory(attribute * 4 + colorIndex);
+        int colorCode = readByteFromPaletteMemory(attribute * 4 + backgroundColorNumber, true);
         // TODO: color tinting/emphasis using PPUMASK
         if (regPPUMASK.grayscale && (colorCode & 0xF) < 0xD)
             colorCode &= 0xF0;
@@ -430,28 +430,31 @@ public class PPU extends MemoryMapped {
                 spriteXPositions[i]--;
     }
 
-    private void renderSpritePixel(BufferedImage img) {
+    private Color getSpritePixelColor() {
         for (int i = 0; i < 8; i++) {
             int xPosition = spriteXPositions[i];
             if (xPosition == 0) {
                 byte lsb = spritePatternLowByteShiftRegisters[i];
                 byte msb = spritePatternHighByteShiftRegisters[i];
-                int colorIndex = ((lsb & 0x80) != 0 ? 1 : 0) +
+                spriteColorNumber = ((lsb & 0x80) != 0 ? 1 : 0) +
                         2 * ((msb & 0x80) != 0 ? 1 : 0);
                 int palette = spriteAttributes[i] & 3;
-                int colorCode = readByteFromPaletteMemory(16 + palette * 4 + colorIndex);
-                if (colorIndex != 0) {
-                    img.setRGB(column - 1, scanline, SYSTEM_PALETTE[colorCode].getRGB());
-                    return;
-                }
+                spriteHasPriorityOverBackground = (spriteAttributes[i] & 0x20) == 0;
+                int colorCode = readByteFromPaletteMemory(16 + palette * 4 +
+                        spriteColorNumber, true);
+                if (spriteColorNumber != 0)
+                    return SYSTEM_PALETTE[colorCode];
             }
         }
+        return null;
     }
 
-    private byte readByteFromPaletteMemory(int address) {
-        if ((address & 0x10) != 0 && address % 4 == 0)
-            return paletteMemory[address & ~0x10];
-        return paletteMemory[address];
+    private byte readByteFromPaletteMemory(int address, boolean rendering) {
+        if (address % 4 != 0)
+            return paletteMemory[address];
+        if (rendering)
+            return paletteMemory[0];
+        return paletteMemory[address & ~0x10];
     }
 
     private void writeByteToPaletteMemory(int address, byte value) {
@@ -483,7 +486,7 @@ public class PPU extends MemoryMapped {
 
     private byte readByteFromVramAddress() {
         if (vramAddress >= 0x3F00)
-            return readByteFromPaletteMemory(vramAddress & 0x1F);
+            return readByteFromPaletteMemory(vramAddress & 0x1F, false);
         byte buffer = regPPUDATA;
         if (vramAddress < 0x2000)
             regPPUDATA = cartridge.ppuReadByte(vramAddress);
