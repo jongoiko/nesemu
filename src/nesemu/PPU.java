@@ -168,8 +168,11 @@ public class PPU extends MemoryMapped {
 
     public void clockTick(BufferedImage img, CPU cpu) {
         if (scanline >= -1 && scanline < 240) {
-            if (scanline == -1 && column == 1)
+            if (scanline == -1 && column == 1) {
                 regPPUSTATUS.verticalBlank = false;
+                regPPUSTATUS.spriteOverflow = false;
+                regPPUSTATUS.spriteZeroHit = false;
+            }
             if ((column >= 1 && column <= 257) || (column >= 321 && column <= 336)) {
                 shiftTileRegisters();
                 switch ((column - 1) % 8) {
