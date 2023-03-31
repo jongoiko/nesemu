@@ -79,7 +79,7 @@ public class PPU extends MemoryMapped {
         spritePatternHighByteShiftRegisters = new byte[8];
         spriteAttributes = new byte[8];
         spriteXPositions = new byte[8];
-        regPPUCTRL = new PPUCTRL(1, 0, 0, 8, true, false);
+        regPPUCTRL = new PPUCTRL(1, 0, 0, false, true, false);
         regPPUMASK = new PPUMASK(false, false, false, false, false, false, false, false);
         regPPUSTATUS = new PPUSTATUS(false, false, false);
     }
@@ -88,17 +88,17 @@ public class PPU extends MemoryMapped {
         public int nametableAddressIncrement;       // 1 or 32
         public int spritePatternTableAddress;       // 0 or 1
         public int backgroundPatternTableAddress;   // 0 or 1
-        public int spriteRowCount;                  // 8 or 16
+        public boolean eightBySixteenMode;
         public boolean isSlave;
         public boolean generateNMIOnVBlank;
 
         public PPUCTRL(int nametableAddressIncrement, int spritePatternTableAddress,
-                int backgroundPatternTableAddress, int spriteRowCount, boolean isSlave,
+                int backgroundPatternTableAddress, boolean eightBySixteenMode, boolean isSlave,
                 boolean generateNMIOnVBlank) {
             this.nametableAddressIncrement = nametableAddressIncrement;
             this.spritePatternTableAddress = spritePatternTableAddress;
             this.backgroundPatternTableAddress = backgroundPatternTableAddress;
-            this.spriteRowCount = spriteRowCount;
+            this.eightBySixteenMode = eightBySixteenMode;
             this.isSlave = isSlave;
             this.generateNMIOnVBlank = generateNMIOnVBlank;
         }
@@ -107,7 +107,7 @@ public class PPU extends MemoryMapped {
             nametableAddressIncrement = (flags & 4) != 0 ? 32 : 1;
             spritePatternTableAddress = (flags & 8) >> 3;
             backgroundPatternTableAddress = (flags & 16) >> 4;
-            spriteRowCount = (flags & 32) != 0 ? 16 : 8;
+            eightBySixteenMode = (flags & 32) != 0;
             isSlave = (flags & 64) == 0;
             generateNMIOnVBlank = (flags & 128) != 0;
         }
@@ -374,7 +374,9 @@ public class PPU extends MemoryMapped {
             int spriteAddress = spriteNumber * 4;
             int secondarySpriteAddress = visibleSpriteCount * 4;
             int yPosition = Byte.toUnsignedInt(oamMemory[spriteAddress]);
-            if (scanline >= yPosition && scanline < yPosition + 8) {
+            if (scanline >= yPosition &&
+                    (!regPPUCTRL.eightBySixteenMode && scanline < yPosition + 8 ||
+                    regPPUCTRL.eightBySixteenMode && scanline < yPosition + 16)) {
                 if (visibleSpriteCount < 8)
                     for (int i = 0; i < 4; i++)
                         secondaryOamMemory[secondarySpriteAddress + i] =
@@ -395,13 +397,26 @@ public class PPU extends MemoryMapped {
             boolean verticalFlip = (spriteAttributes[i] & 0x80) != 0;
             spriteXPositions[i] = secondaryOamMemory[i * 4 + 3];
             int yPosition = Byte.toUnsignedInt(secondaryOamMemory[i * 4]);
-            // TODO: 16 pixel mode
-            int tileNumber = Byte.toUnsignedInt(secondaryOamMemory[i * 4 + 1]);
-            int patternByteAddress = tileNumber * 16;
-            patternByteAddress += verticalFlip ?
-                    7 - scanline + yPosition : scanline - yPosition;
-            if (regPPUCTRL.spritePatternTableAddress != 0)
-                patternByteAddress |= 0x1000;
+            int patternByteAddress;
+            if (regPPUCTRL.eightBySixteenMode) {
+                byte tileNumberByte = secondaryOamMemory[i * 4 + 1];
+                int tileNumber = Byte.toUnsignedInt(tileNumberByte) >>> 1;
+                patternByteAddress = tileNumber * 32;
+                if (verticalFlip && scanline - yPosition <= 7 ||
+                        !verticalFlip && scanline - yPosition > 7)
+                    patternByteAddress += 16;
+                patternByteAddress += verticalFlip ?
+                        7 - (scanline - yPosition) % 8: (scanline - yPosition) % 8;
+                if ((tileNumberByte & 1) != 0)
+                    patternByteAddress |= 0x1000;
+            } else {
+                int tileNumber = Byte.toUnsignedInt(secondaryOamMemory[i * 4 + 1]);
+                patternByteAddress = tileNumber * 16;
+                patternByteAddress += verticalFlip ?
+                        7 - scanline + yPosition : scanline - yPosition;
+                if (regPPUCTRL.spritePatternTableAddress != 0)
+                    patternByteAddress |= 0x1000;
+            }
             byte lsb = cartridge.ppuReadByte((short)patternByteAddress);
             byte msb = cartridge.ppuReadByte((short)(patternByteAddress + 8));
             if (horizontalFlip) {
