@@ -132,6 +132,8 @@ public class CPU extends MemoryMapped {
         setFlag(StatusFlag.IRQ_DISABLE, true);
         regPC = (short)Byte.toUnsignedInt(addressSpace.readByte((short)0xFFFC));
         regPC += addressSpace.readByte((short)0xFFFD) << 8;
+        cycleCount = 0;
+        cyclesUntilNextInstruction = 0;
     }
 
     private void serviceNMI() {
