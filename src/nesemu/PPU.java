@@ -54,10 +54,10 @@ public class PPU extends MemoryMapped {
     private byte nextTilePatternHighByte;
     private int nextTileAttribute;
     private int nextTileNumber;
-    private short tilePatternLowByteShiftRegister;
-    private short tilePatternHighByteShiftRegister;
-    private short tileAttributeLowByteShiftRegister;
-    private short tileAttributeHighByteShiftRegister;
+    private short backgroundPatternLowByteShiftRegister;
+    private short backgroundPatternHighByteShiftRegister;
+    private short backgroundAttributeLowByteShiftRegister;
+    private short backgroundAttributeHighByteShiftRegister;
 
     private final byte spritePatternLowByteShiftRegisters[];
     private final byte spritePatternHighByteShiftRegisters[];
@@ -174,22 +174,22 @@ public class PPU extends MemoryMapped {
                 regPPUSTATUS.spriteZeroHit = false;
             }
             if ((column >= 1 && column <= 257) || (column >= 321 && column <= 336)) {
-                shiftTileRegisters();
+                shiftBackgroundShiftRegisters();
                 switch ((column - 1) % 8) {
                     case 0 -> {
-                        loadLatchesIntoShiftRegisters();
-                        readNametableByte();
+                        loadLatchesIntoBackgroundShiftRegisters();
+                        readBackgroundNametableByte();
                     }
-                    case 2 -> readAttribute();
-                    case 4 -> readPatternLowByte();
-                    case 6 -> readPatternHighByte();
+                    case 2 -> readBackgroundAttribute();
+                    case 4 -> readBackgroundPatternLowByte();
+                    case 6 -> readBackgroundPatternHighByte();
                     case 7 -> increaseHorizontalVramAddress();
                 }
             }
             if (column == 256)
                 increaseVerticalVramAddress();
             if (column == 257) {
-                copyHorizontalPosition();
+                copyVramAddressHorizontalPosition();
                 readSpriteData();
             }
             if (scanline >= 0 && column >= 1) {
@@ -204,7 +204,7 @@ public class PPU extends MemoryMapped {
                     spriteColor = getSpritePixelColor();
                 renderPixel(backgroundColor, spriteColor, img);
                 if (column < 255) {
-                    shiftSpriteRegisters();
+                    shiftSpriteShiftRegisters();
                     decrementSpritesXPositions();
                 }
             }
@@ -215,7 +215,7 @@ public class PPU extends MemoryMapped {
         if (column >= 257 && column <= 320 && scanline < 240)
             regOAMADDR = 0;
         if (scanline == -1 && column >= 280 && column <= 304)
-            copyVerticalPosition();
+            copyVramAddressVerticalPosition();
         else if (scanline == 241 && column == 1) {
             regPPUSTATUS.verticalBlank = true;
             isFrameReady = true;
@@ -243,14 +243,14 @@ public class PPU extends MemoryMapped {
         img.setRGB(column - 1, scanline, finalColor.getRGB());
     }
 
-    private void shiftTileRegisters() {
-        tilePatternLowByteShiftRegister <<= 1;
-        tilePatternHighByteShiftRegister <<= 1;
-        tileAttributeLowByteShiftRegister <<= 1;
-        tileAttributeHighByteShiftRegister <<= 1;
+    private void shiftBackgroundShiftRegisters() {
+        backgroundPatternLowByteShiftRegister <<= 1;
+        backgroundPatternHighByteShiftRegister <<= 1;
+        backgroundAttributeLowByteShiftRegister <<= 1;
+        backgroundAttributeHighByteShiftRegister <<= 1;
     }
 
-    private void shiftSpriteRegisters() {
+    private void shiftSpriteShiftRegisters() {
         for (int i = 0; i < 8; i++) {
             if (spriteXPositions[i] == 0) {
                 spritePatternLowByteShiftRegisters[i] <<= 1;
@@ -259,27 +259,27 @@ public class PPU extends MemoryMapped {
         }
     }
 
-    private void loadLatchesIntoShiftRegisters() {
-        tilePatternLowByteShiftRegister &= 0xFF00;
-        tilePatternLowByteShiftRegister |= nextTilePatternLowByte & 0xFF;
-        tilePatternHighByteShiftRegister &= 0xFF00;
-        tilePatternHighByteShiftRegister |= nextTilePatternHighByte & 0xFF;
-        tileAttributeLowByteShiftRegister &= 0xFF00;
-        tileAttributeLowByteShiftRegister |= (nextTileAttribute & 1) != 0 ? 0xFF : 0;
-        tileAttributeHighByteShiftRegister &= 0xFF00;
-        tileAttributeHighByteShiftRegister |= (nextTileAttribute & 2) != 0 ? 0xFF : 0;
+    private void loadLatchesIntoBackgroundShiftRegisters() {
+        backgroundPatternLowByteShiftRegister &= 0xFF00;
+        backgroundPatternLowByteShiftRegister |= nextTilePatternLowByte & 0xFF;
+        backgroundPatternHighByteShiftRegister &= 0xFF00;
+        backgroundPatternHighByteShiftRegister |= nextTilePatternHighByte & 0xFF;
+        backgroundAttributeLowByteShiftRegister &= 0xFF00;
+        backgroundAttributeLowByteShiftRegister |= (nextTileAttribute & 1) != 0 ? 0xFF : 0;
+        backgroundAttributeHighByteShiftRegister &= 0xFF00;
+        backgroundAttributeHighByteShiftRegister |= (nextTileAttribute & 2) != 0 ? 0xFF : 0;
     }
 
     private boolean isRenderingEnabled() {
         return regPPUMASK.showBackground || regPPUMASK.showSprites;
     }
 
-    private void readNametableByte() {
+    private void readBackgroundNametableByte() {
         int tileNumberAddress = vramAddress & 0xFFF;
         nextTileNumber = Byte.toUnsignedInt(readByteFromNametableMemory(tileNumberAddress));
     }
 
-    private void readAttribute() {
+    private void readBackgroundAttribute() {
         int attributeByteAddress = 0x3C0 | (vramAddress & 0x0C00) |
                 ((vramAddress >>> 4) & 0x38) | ((vramAddress >>> 2) & 7);
         byte attributeByte = readByteFromNametableMemory(attributeByteAddress);
@@ -295,14 +295,14 @@ public class PPU extends MemoryMapped {
             nextTileAttribute = (attributeByte >>> 6) & 3;
     }
 
-    private void readPatternLowByte() {
+    private void readBackgroundPatternLowByte() {
         int patternByteAddress = nextTileNumber * 16 + (vramAddress >>> 12);
         if (regPPUCTRL.backgroundPatternTableAddress != 0)
             patternByteAddress |= 0x1000;
         nextTilePatternLowByte = cartridge.ppuReadByte((short)patternByteAddress);
     }
 
-    private void readPatternHighByte() {
+    private void readBackgroundPatternHighByte() {
         int patternByteAddress = nextTileNumber * 16 + 8 + (vramAddress >>> 12);
         if (regPPUCTRL.backgroundPatternTableAddress != 0)
             patternByteAddress |= 0x1000;
@@ -340,14 +340,14 @@ public class PPU extends MemoryMapped {
         }
     }
 
-    private void copyHorizontalPosition() {
+    private void copyVramAddressHorizontalPosition() {
         if (isRenderingEnabled()) {
             vramAddress &= ~0x41F;
             vramAddress |= tempVramAddress & 0x41F;
         }
     }
 
-    private void copyVerticalPosition() {
+    private void copyVramAddressVerticalPosition() {
         if (isRenderingEnabled()) {
             vramAddress &= ~0x7BE0;
             vramAddress |= tempVramAddress & 0x7BE0;
@@ -356,15 +356,34 @@ public class PPU extends MemoryMapped {
 
     private Color getBackgroundPixelColor() {
         int pixel = 0x8000 >>> fineXScroll;
-        backgroundColorNumber = ((tilePatternLowByteShiftRegister & pixel) != 0 ? 1 : 0) +
-                2 * ((tilePatternHighByteShiftRegister & pixel) != 0 ? 1 : 0);
-        int attribute = ((tileAttributeLowByteShiftRegister & pixel) != 0 ? 1 : 0) +
-                2 * ((tileAttributeHighByteShiftRegister & pixel) != 0 ? 1 : 0);
+        backgroundColorNumber = ((backgroundPatternLowByteShiftRegister & pixel) != 0 ? 1 : 0) +
+                2 * ((backgroundPatternHighByteShiftRegister & pixel) != 0 ? 1 : 0);
+        int attribute = ((backgroundAttributeLowByteShiftRegister & pixel) != 0 ? 1 : 0) +
+                2 * ((backgroundAttributeHighByteShiftRegister & pixel) != 0 ? 1 : 0);
         int colorCode = readByteFromPaletteMemory(attribute * 4 + backgroundColorNumber, true);
         // TODO: color tinting/emphasis using PPUMASK
         if (regPPUMASK.grayscale && (colorCode & 0xF) < 0xD)
             colorCode &= 0xF0;
         return SYSTEM_PALETTE[colorCode];
+    }
+
+    private Color getSpritePixelColor() {
+        for (int i = 0; i < 8; i++) {
+            int xPosition = spriteXPositions[i];
+            if (xPosition == 0) {
+                byte lsb = spritePatternLowByteShiftRegisters[i];
+                byte msb = spritePatternHighByteShiftRegisters[i];
+                spriteColorNumber = ((lsb & 0x80) != 0 ? 1 : 0) +
+                        2 * ((msb & 0x80) != 0 ? 1 : 0);
+                int palette = spriteAttributes[i] & 3;
+                spriteHasPriorityOverBackground = (spriteAttributes[i] & 0x20) == 0;
+                int colorCode = readByteFromPaletteMemory(16 + palette * 4 +
+                        spriteColorNumber, true);
+                if (spriteColorNumber != 0)
+                    return SYSTEM_PALETTE[colorCode];
+            }
+        }
+        return null;
     }
 
     private void clearSecondaryOam() {
@@ -446,25 +465,6 @@ public class PPU extends MemoryMapped {
         for (int i = 0; i < spriteXPositions.length; i++)
             if (spriteXPositions[i] != 0)
                 spriteXPositions[i]--;
-    }
-
-    private Color getSpritePixelColor() {
-        for (int i = 0; i < 8; i++) {
-            int xPosition = spriteXPositions[i];
-            if (xPosition == 0) {
-                byte lsb = spritePatternLowByteShiftRegisters[i];
-                byte msb = spritePatternHighByteShiftRegisters[i];
-                spriteColorNumber = ((lsb & 0x80) != 0 ? 1 : 0) +
-                        2 * ((msb & 0x80) != 0 ? 1 : 0);
-                int palette = spriteAttributes[i] & 3;
-                spriteHasPriorityOverBackground = (spriteAttributes[i] & 0x20) == 0;
-                int colorCode = readByteFromPaletteMemory(16 + palette * 4 +
-                        spriteColorNumber, true);
-                if (spriteColorNumber != 0)
-                    return SYSTEM_PALETTE[colorCode];
-            }
-        }
-        return null;
     }
 
     private byte readByteFromPaletteMemory(int address, boolean rendering) {
