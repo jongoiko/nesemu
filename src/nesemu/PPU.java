@@ -239,6 +239,13 @@ public class PPU extends MemoryMapped {
             scanline = -1;
     }
 
+    public void reset() {
+        scanline = -1;
+        vramAddress = 0;
+        regPPUMASK.update((byte)0);
+        regPPUCTRL.update((byte)0);
+    }
+
     private void renderPixel(Color backgroundColor, Color spriteColor, BufferedImage img) {
         Color finalColor = new Color(0);
         if (backgroundColor != null)
