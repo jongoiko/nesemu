@@ -51,6 +51,8 @@ public class PPU extends MemoryMapped {
     private boolean firstByteWritten;
 
     private boolean checkForSpriteZeroHit;
+    private boolean isSpriteZeroLoadedToSecondaryOam;
+    private boolean isSpriteZeroInScanline;
     private boolean renderingSpriteZero;
 
     private byte nextTilePatternLowByte;
@@ -177,7 +179,6 @@ public class PPU extends MemoryMapped {
                 regPPUSTATUS.verticalBlank = false;
                 regPPUSTATUS.spriteOverflow = false;
                 regPPUSTATUS.spriteZeroHit = false;
-                renderingSpriteZero = false;
             }
             if ((column >= 1 && column <= 257) || (column >= 321 && column <= 336)) {
                 shiftBackgroundShiftRegisters();
@@ -378,6 +379,7 @@ public class PPU extends MemoryMapped {
     }
 
     private Color getSpritePixelColor() {
+        renderingSpriteZero = false;
         for (int i = 0; i < 8; i++) {
             int xPosition = spriteXPositions[i];
             if (xPosition == 0) {
@@ -389,8 +391,10 @@ public class PPU extends MemoryMapped {
                 spriteHasPriorityOverBackground = (spriteAttributes[i] & 0x20) == 0;
                 int colorCode = readByteFromPaletteMemory(16 + palette * 4 +
                         spriteColorNumber, true);
-                if (spriteColorNumber != 0)
+                if (spriteColorNumber != 0) {
+                    renderingSpriteZero = isSpriteZeroInScanline && i == 0;
                     return SYSTEM_PALETTE[colorCode];
+                }
             }
         }
         return null;
@@ -401,6 +405,7 @@ public class PPU extends MemoryMapped {
     }
 
     private void evaluateSprites() {
+        isSpriteZeroLoadedToSecondaryOam = false;
         int spriteNumber = 0, visibleSpriteCount = 0;
         while (spriteNumber < 64) {
             int spriteAddress = spriteNumber * 4;
@@ -411,7 +416,7 @@ public class PPU extends MemoryMapped {
                     regPPUCTRL.eightBySixteenMode && scanline < yPosition + 16)) {
                 if (visibleSpriteCount < 8) {
                     if (spriteNumber == 0)
-                        renderingSpriteZero = true;
+                        isSpriteZeroLoadedToSecondaryOam = true;
                     for (int i = 0; i < 4; i++)
                         secondaryOamMemory[secondarySpriteAddress + i] =
                                 oamMemory[spriteAddress + i];
@@ -426,6 +431,7 @@ public class PPU extends MemoryMapped {
     }
 
     void readSpriteData() {
+        isSpriteZeroInScanline = isSpriteZeroLoadedToSecondaryOam;
         for (int i = 0; i < 8; i++) {
             spriteAttributes[i] = secondaryOamMemory[i * 4 + 2];
             boolean horizontalFlip = (spriteAttributes[i] & 0x40) != 0;
