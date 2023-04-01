@@ -27,12 +27,14 @@ public class NES {
     }
 
     public void reset() {
-        cpu.reset();
         ppu.reset();
+        cpu.reset();
     }
 
     public void exchangeCartridge(String cartridgeFilePath) throws IOException {
+        addressSpace.removeDevice(cartridge);
         cartridge = Cartridge.fromINESFile(cartridgeFilePath);
+        addressSpace.addDevice(cartridge);
         ppu.cartridge = cartridge;
         reset();
     }
