@@ -15,6 +15,10 @@ public class AddressSpace {
         devices.add(device);
     }
 
+    public void removeDevice(MemoryMapped device) {
+        devices.remove(device);
+    }
+
     public byte readByte(short address) {
         for (MemoryMapped device : devices)
             if (device.addressIsMapped(address))
