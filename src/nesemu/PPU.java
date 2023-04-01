@@ -50,6 +50,9 @@ public class PPU extends MemoryMapped {
     private int fineXScroll;
     private boolean firstByteWritten;
 
+    private boolean checkForSpriteZeroHit;
+    private boolean renderingSpriteZero;
+
     private byte nextTilePatternLowByte;
     private byte nextTilePatternHighByte;
     private int nextTileAttribute;
@@ -168,10 +171,13 @@ public class PPU extends MemoryMapped {
 
     public void clockTick(BufferedImage img, CPU cpu) {
         if (scanline >= -1 && scanline < 240) {
+            checkForSpriteZeroHit = regPPUMASK.showBackground &&
+                    regPPUMASK.showSprites && column > 7 && column < 255;
             if (scanline == -1 && column == 1) {
                 regPPUSTATUS.verticalBlank = false;
                 regPPUSTATUS.spriteOverflow = false;
                 regPPUSTATUS.spriteZeroHit = false;
+                renderingSpriteZero = false;
             }
             if ((column >= 1 && column <= 257) || (column >= 321 && column <= 336)) {
                 shiftBackgroundShiftRegisters();
@@ -236,10 +242,14 @@ public class PPU extends MemoryMapped {
         Color finalColor = new Color(0);
         if (backgroundColor != null)
             finalColor = backgroundColor;
-        if (spriteColor != null &&
-                (spriteColorNumber != 0 && spriteHasPriorityOverBackground ||
-                backgroundColorNumber == 0))
-            finalColor = spriteColor;
+        if (spriteColor != null) {
+            if (spriteColorNumber != 0 && spriteHasPriorityOverBackground ||
+                    backgroundColorNumber == 0)
+                finalColor = spriteColor;
+            if (checkForSpriteZeroHit && renderingSpriteZero &&
+                    spriteColorNumber != 0 && backgroundColorNumber != 0)
+                regPPUSTATUS.spriteZeroHit = true;
+        }
         img.setRGB(column - 1, scanline, finalColor.getRGB());
     }
 
@@ -399,10 +409,13 @@ public class PPU extends MemoryMapped {
             if (scanline >= yPosition &&
                     (!regPPUCTRL.eightBySixteenMode && scanline < yPosition + 8 ||
                     regPPUCTRL.eightBySixteenMode && scanline < yPosition + 16)) {
-                if (visibleSpriteCount < 8)
+                if (visibleSpriteCount < 8) {
+                    if (spriteNumber == 0)
+                        renderingSpriteZero = true;
                     for (int i = 0; i < 4; i++)
                         secondaryOamMemory[secondarySpriteAddress + i] =
                                 oamMemory[spriteAddress + i];
+                }
                 visibleSpriteCount++;
             }
             if (visibleSpriteCount >= 9)
