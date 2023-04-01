@@ -28,7 +28,7 @@ public class PPU extends MemoryMapped {
         new Color(160, 214, 228), new Color(160, 162, 160), new Color(0, 0, 0),       new Color(0, 0, 0)
     };
 
-    private final Cartridge cartridge;
+    public Cartridge cartridge;
     private final byte paletteMemory[];
     private final byte nametableMemory[][];
     private final byte oamMemory[];
