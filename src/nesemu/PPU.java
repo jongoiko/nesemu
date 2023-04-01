@@ -169,6 +169,12 @@ public class PPU extends MemoryMapped {
             return (byte)((spriteOverflow ? 32 : 0) | (spriteZeroHit ? 64 : 0) |
                     (verticalBlank ? 128 : 0));
         }
+
+        public void reset() {
+            spriteOverflow = false;
+            spriteZeroHit = false;
+            verticalBlank = false;
+        }
     }
 
     public void clockTick(BufferedImage img, CPU cpu) {
@@ -241,9 +247,17 @@ public class PPU extends MemoryMapped {
 
     public void reset() {
         scanline = -1;
+        column = 0;
+        frameCount = 0;
         vramAddress = 0;
+        tempVramAddress = 0;
+        fineXScroll = 0;
+        firstByteWritten = false;
+        isFrameReady = false;
+        regPPUDATA = (byte)0;
         regPPUMASK.update((byte)0);
         regPPUCTRL.update((byte)0);
+        regPPUSTATUS.reset();
     }
 
     private void renderPixel(Color backgroundColor, Color spriteColor, BufferedImage img) {
