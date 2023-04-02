@@ -432,9 +432,8 @@ public class PPU extends MemoryMapped {
             int spriteAddress = spriteNumber * 4;
             int secondarySpriteAddress = visibleSpriteCount * 4;
             int yPosition = Byte.toUnsignedInt(oamMemory[spriteAddress]);
-            if (scanline >= yPosition &&
-                    (!regPPUCTRL.eightBySixteenMode && scanline < yPosition + 8 ||
-                    regPPUCTRL.eightBySixteenMode && scanline < yPosition + 16)) {
+            int spriteHeight = regPPUCTRL.eightBySixteenMode ? 16 : 8;
+            if (scanline >= yPosition && scanline < yPosition + spriteHeight) {
                 if (visibleSpriteCount < 8) {
                     if (spriteNumber == 0)
                         isSpriteZeroLoadedToSecondaryOam = true;
