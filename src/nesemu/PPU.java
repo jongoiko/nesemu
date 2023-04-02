@@ -453,39 +453,44 @@ public class PPU extends MemoryMapped {
     void readSpriteData() {
         isSpriteZeroInScanline = isSpriteZeroLoadedToSecondaryOam;
         for (int i = 0; i < 8; i++) {
-            spriteAttributes[i] = secondaryOamMemory[i * 4 + 2];
-            boolean horizontalFlip = (spriteAttributes[i] & 0x40) != 0;
-            boolean verticalFlip = (spriteAttributes[i] & 0x80) != 0;
             spriteXPositions[i] = secondaryOamMemory[i * 4 + 3];
-            int yPosition = Byte.toUnsignedInt(secondaryOamMemory[i * 4]);
-            int patternByteAddress;
-            if (regPPUCTRL.eightBySixteenMode) {
-                byte tileNumberByte = secondaryOamMemory[i * 4 + 1];
-                int tileNumber = Byte.toUnsignedInt(tileNumberByte) >>> 1;
-                patternByteAddress = tileNumber * 32;
-                if (verticalFlip && scanline - yPosition <= 7 ||
-                        !verticalFlip && scanline - yPosition > 7)
-                    patternByteAddress += 16;
-                patternByteAddress += verticalFlip ?
-                        7 - (scanline - yPosition) % 8: (scanline - yPosition) % 8;
-                if ((tileNumberByte & 1) != 0)
-                    patternByteAddress |= 0x1000;
+            if (spriteXPositions[i] == -1) {
+                spritePatternLowByteShiftRegisters[i] = 0;
+                spritePatternHighByteShiftRegisters[i] = 0;
             } else {
-                int tileNumber = Byte.toUnsignedInt(secondaryOamMemory[i * 4 + 1]);
-                patternByteAddress = tileNumber * 16;
-                patternByteAddress += verticalFlip ?
-                        7 - scanline + yPosition : scanline - yPosition;
-                if (regPPUCTRL.spritePatternTableAddress != 0)
-                    patternByteAddress |= 0x1000;
+                spriteAttributes[i] = secondaryOamMemory[i * 4 + 2];
+                boolean horizontalFlip = (spriteAttributes[i] & 0x40) != 0;
+                boolean verticalFlip = (spriteAttributes[i] & 0x80) != 0;
+                int yPosition = Byte.toUnsignedInt(secondaryOamMemory[i * 4]);
+                int patternByteAddress;
+                if (regPPUCTRL.eightBySixteenMode) {
+                    byte tileNumberByte = secondaryOamMemory[i * 4 + 1];
+                    int tileNumber = Byte.toUnsignedInt(tileNumberByte) >>> 1;
+                    patternByteAddress = tileNumber * 32;
+                    if (verticalFlip && scanline - yPosition <= 7 ||
+                            !verticalFlip && scanline - yPosition > 7)
+                        patternByteAddress += 16;
+                    patternByteAddress += verticalFlip ?
+                            7 - (scanline - yPosition) % 8: (scanline - yPosition) % 8;
+                    if ((tileNumberByte & 1) != 0)
+                        patternByteAddress |= 0x1000;
+                } else {
+                    int tileNumber = Byte.toUnsignedInt(secondaryOamMemory[i * 4 + 1]);
+                    patternByteAddress = tileNumber * 16;
+                    patternByteAddress += verticalFlip ?
+                            7 - scanline + yPosition : scanline - yPosition;
+                    if (regPPUCTRL.spritePatternTableAddress != 0)
+                        patternByteAddress |= 0x1000;
+                }
+                byte lsb = cartridge.ppuReadByte((short)patternByteAddress);
+                byte msb = cartridge.ppuReadByte((short)(patternByteAddress + 8));
+                if (horizontalFlip) {
+                    lsb = reverseBits(lsb);
+                    msb = reverseBits(msb);
+                }
+                spritePatternLowByteShiftRegisters[i] = lsb;
+                spritePatternHighByteShiftRegisters[i] = msb;
             }
-            byte lsb = cartridge.ppuReadByte((short)patternByteAddress);
-            byte msb = cartridge.ppuReadByte((short)(patternByteAddress + 8));
-            if (horizontalFlip) {
-                lsb = reverseBits(lsb);
-                msb = reverseBits(msb);
-            }
-            spritePatternLowByteShiftRegisters[i] = lsb;
-            spritePatternHighByteShiftRegisters[i] = msb;
         }
     }
 
