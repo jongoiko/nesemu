@@ -576,8 +576,10 @@ public class PPU extends MemoryMapped {
     byte readByteFromDevice(short address) {
         switch (address & 7) {
             case 2 -> {
+                byte value = regPPUSTATUS.toByte();
                 firstByteWritten = false;
-                return regPPUSTATUS.toByte();
+                regPPUSTATUS.verticalBlank = false;
+                return value;
             }
             case 4 -> {
                 return oamMemory[Byte.toUnsignedInt(regOAMADDR)];
