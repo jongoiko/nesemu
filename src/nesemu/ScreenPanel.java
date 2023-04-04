@@ -4,6 +4,9 @@ import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
 public class ScreenPanel extends javax.swing.JPanel {
+    private final static int SCREEN_WIDTH = 256;
+    private final static int SCREEN_HEIGHT = 240;
+
     BufferedImage img;
 
     public ScreenPanel() {
@@ -12,7 +15,7 @@ public class ScreenPanel extends javax.swing.JPanel {
 
     @Override
     public void paint(Graphics g) {
-        g.drawImage(img, 0, 0, 2 * img.getWidth(), 2 * img.getHeight(), null);
+        g.drawImage(img, 0, 0, getWidth(), getHeight(), null);
     }
 
     @SuppressWarnings("unchecked")
@@ -32,9 +35,8 @@ public class ScreenPanel extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     void init() {
-        final int width = getWidth();
-        final int height = getHeight();
-        img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        img = new BufferedImage(SCREEN_WIDTH, SCREEN_HEIGHT,
+                BufferedImage.TYPE_INT_ARGB);
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

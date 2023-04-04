@@ -205,7 +205,7 @@ public class PPU extends MemoryMapped {
                 copyVramAddressHorizontalPosition();
                 readSpriteData();
             }
-            if (scanline >= 0 && column >= 1) {
+            if (scanline >= 0 && column >= 1 && column < 256) {
                 if (column == 1)
                     clearSecondaryOam();
                 else if (column == 65)
