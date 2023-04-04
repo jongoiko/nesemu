@@ -15,6 +15,7 @@ public class CPU extends MemoryMapped {
     private short cyclesUntilNextInstruction;
     private short operandEffectiveAddress;
     private boolean isMemoryOperand;
+    private boolean branchDestinationPageCrossed;
     private int cycleCount;
 
     public boolean requestNMI;
@@ -164,9 +165,7 @@ public class CPU extends MemoryMapped {
                 address = readByteAtPCAndIncrement();
                 previousPage = (short)(regPC & 0xFF00);
                 address += regPC;
-                cyclesUntilNextInstruction++;
-                if ((short)(address & 0xFF00) != previousPage)
-                    cyclesUntilNextInstruction++;
+                branchDestinationPageCrossed = (short)(address & 0xFF00) != previousPage;
                 break;
             case ABSOLUTE_X:
             case ABSOLUTE_Y:
@@ -578,18 +577,24 @@ public class CPU extends MemoryMapped {
     }
 
     private void BCC() {
-        if (!getFlag(StatusFlag.CARRY))
+        if (!getFlag(StatusFlag.CARRY)) {
             regPC = operandEffectiveAddress;
+            cyclesUntilNextInstruction += branchDestinationPageCrossed ? 2 : 1;
+        }
     }
 
     private void BCS() {
-        if (getFlag(StatusFlag.CARRY))
+        if (getFlag(StatusFlag.CARRY)) {
             regPC = operandEffectiveAddress;
+            cyclesUntilNextInstruction += branchDestinationPageCrossed ? 2 : 1;
+        }
     }
 
     private void BEQ() {
-        if (getFlag(StatusFlag.ZERO))
+        if (getFlag(StatusFlag.ZERO)) {
             regPC = operandEffectiveAddress;
+            cyclesUntilNextInstruction += branchDestinationPageCrossed ? 2 : 1;
+        }
     }
 
     private void BIT() {
@@ -600,18 +605,24 @@ public class CPU extends MemoryMapped {
     }
 
     private void BMI() {
-        if (getFlag(StatusFlag.NEGATIVE))
+        if (getFlag(StatusFlag.NEGATIVE)) {
             regPC = operandEffectiveAddress;
+            cyclesUntilNextInstruction += branchDestinationPageCrossed ? 2 : 1;
+        }
     }
 
     private void BNE() {
-        if (!getFlag(StatusFlag.ZERO))
+        if (!getFlag(StatusFlag.ZERO)) {
             regPC = operandEffectiveAddress;
+            cyclesUntilNextInstruction += branchDestinationPageCrossed ? 2 : 1;
+        }
     }
 
     private void BPL() {
-        if (!getFlag(StatusFlag.NEGATIVE))
+        if (!getFlag(StatusFlag.NEGATIVE)) {
             regPC = operandEffectiveAddress;
+            cyclesUntilNextInstruction += branchDestinationPageCrossed ? 2 : 1;
+        }
     }
 
     private void BRK() {
@@ -625,13 +636,17 @@ public class CPU extends MemoryMapped {
     }
 
     private void BVC() {
-        if (!getFlag(StatusFlag.OVERFLOW))
+        if (!getFlag(StatusFlag.OVERFLOW)) {
             regPC = operandEffectiveAddress;
+            cyclesUntilNextInstruction += branchDestinationPageCrossed ? 2 : 1;
+        }
     }
 
     private void BVS() {
-        if (getFlag(StatusFlag.OVERFLOW))
+        if (getFlag(StatusFlag.OVERFLOW)) {
             regPC = operandEffectiveAddress;
+            cyclesUntilNextInstruction += branchDestinationPageCrossed ? 2 : 1;
+        }
     }
 
     private void CLC() {
