@@ -115,14 +115,15 @@ public class CPU extends MemoryMapped {
             // Check for interrupts, etc.
             if (requestNMI)
                 serviceNMI();
-            // short prevRegPC = regPC;
-            final byte opcode = readByteAtPCAndIncrement();
-            final Instruction instruction = instructionLookupTable[Byte.toUnsignedInt(opcode)];
-            operandEffectiveAddress = getEffectiveAddress(instruction.addressingMode,
-                    opcode != 0x91);
-            cyclesUntilNextInstruction += instruction.cycles;
-            // log(instruction, prevRegPC);
-            instruction.operation.run();
+            else {
+                // short prevRegPC = regPC;
+                final byte opcode = readByteAtPCAndIncrement();
+                final Instruction instruction = instructionLookupTable[Byte.toUnsignedInt(opcode)];
+                operandEffectiveAddress = getEffectiveAddress(instruction);
+                cyclesUntilNextInstruction += instruction.cycles;
+                // log(instruction, prevRegPC);
+                instruction.operation.run();
+            }
         }
         cyclesUntilNextInstruction--;
         cycleCount++;
@@ -134,29 +135,28 @@ public class CPU extends MemoryMapped {
         regPC = (short)Byte.toUnsignedInt(addressSpace.readByte((short)0xFFFC));
         regPC += addressSpace.readByte((short)0xFFFD) << 8;
         cycleCount = 0;
-        cyclesUntilNextInstruction = 0;
+        cyclesUntilNextInstruction = 7;
     }
 
     private void serviceNMI() {
-        final short pushedPC = regPC;
-        pushToStack((byte)((pushedPC & 0xFF00) >> 8));
-        pushToStack((byte)(pushedPC & 0xFF));
+        pushToStack((byte)((regPC & 0xFF00) >> 8));
+        pushToStack((byte)(regPC & 0xFF));
         pushPToStack(false);
         regPC = (short)Byte.toUnsignedInt(addressSpace.readByte((short)0xFFFA));
         regPC += addressSpace.readByte((short)0xFFFB) << 8;
         requestNMI = false;
+        cyclesUntilNextInstruction += 7;
     }
 
     private byte readByteAtPCAndIncrement() {
         return addressSpace.readByte(regPC++);
     }
 
-    private short getEffectiveAddress(AddressingMode addressingMode,
-            boolean indirectYCheckPageBoundary) {
+    private short getEffectiveAddress(Instruction instruction) {
         short address = 0, indirectAddress = 0;
         short previousPage;
         isMemoryOperand = true;
-        switch (addressingMode) {
+        switch (instruction.addressingMode) {
             case IMMEDIATE:
                 address = regPC;
                 regPC++;
@@ -169,11 +169,11 @@ public class CPU extends MemoryMapped {
                 break;
             case ABSOLUTE_X:
             case ABSOLUTE_Y:
-                address = (short)Byte.toUnsignedInt(
-                        addressingMode == AddressingMode.ABSOLUTE_X ? regX : regY);
+                address = (short)Byte.toUnsignedInt(instruction.addressingMode
+                        == AddressingMode.ABSOLUTE_X ? regX : regY);
             case ABSOLUTE:
                 address += Byte.toUnsignedInt(readByteAtPCAndIncrement());
-                if (address > 0xFF)
+                if (address > 0xFF && instruction.cycles == 4)
                     cyclesUntilNextInstruction++;
                 address += readByteAtPCAndIncrement() << 8;
                 break;
@@ -196,14 +196,13 @@ public class CPU extends MemoryMapped {
                 address += addressSpace.readByte((short)((indirectAddress + 1) & 0xFF)) << 8;
                 previousPage = (short)(address & 0xFF00);
                 address += (short)Byte.toUnsignedInt(regY);
-                if (indirectYCheckPageBoundary &&
-                        (short)(address & 0xFF00) != previousPage)
+                if ((short)(address & 0xFF00) != previousPage && instruction.cycles == 5)
                     cyclesUntilNextInstruction++;
                 break;
             case ZEROPAGE_X:
             case ZEROPAGE_Y:
-                address = (short)Byte.toUnsignedInt(
-                        addressingMode == AddressingMode.ZEROPAGE_X ? regX : regY);
+                address = (short)Byte.toUnsignedInt(instruction.addressingMode
+                        == AddressingMode.ZEROPAGE_X ? regX : regY);
             case ZEROPAGE:
                 address += readByteAtPCAndIncrement();
                 address &= 0xFF;
