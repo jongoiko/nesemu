@@ -207,14 +207,14 @@ public class PPU extends MemoryMapped {
                     clearSecondaryOam();
                 else if (column == 65)
                     evaluateSprites();
-                Color backgroundColor = null, spriteColor = null;
+                Integer backgroundColorCode = null, spriteColorCode = null;
                 if (column > 8 && regPPUMASK.showBackground ||
                         column <= 8 && regPPUMASK.showBackgroundLeft)
-                    backgroundColor = getBackgroundPixelColor();
+                    backgroundColorCode = getBackgroundPixelColorCode();
                 if (column > 8 && regPPUMASK.showSprites ||
                         column <= 8 && regPPUMASK.showSpritesLeft)
-                    spriteColor = getSpritePixelColor();
-                renderPixel(backgroundColor, spriteColor, img);
+                    spriteColorCode = getSpritePixelColorCode();
+                renderPixel(backgroundColorCode, spriteColorCode, img);
                 if (column < 255) {
                     shiftSpriteShiftRegisters();
                     decrementSpritesXPositions();
@@ -259,19 +259,23 @@ public class PPU extends MemoryMapped {
         regPPUSTATUS.reset();
     }
 
-    private void renderPixel(Color backgroundColor, Color spriteColor, BufferedImage img) {
-        Color finalColor = new Color(0);
-        if (backgroundColor != null)
-            finalColor = backgroundColor;
-        if (spriteColor != null) {
+    private void renderPixel(Integer backgroundColorCode, Integer spriteColorCode,
+            BufferedImage img) {
+        int finalColorCode = 0x0F;
+        if (backgroundColorCode != null)
+            finalColorCode = backgroundColorCode;
+        if (spriteColorCode != null) {
             if (spriteColorNumber != 0 && spriteHasPriorityOverBackground ||
                     backgroundColorNumber == 0)
-                finalColor = spriteColor;
-            if (backgroundColor != null && renderingSpriteZero &&
+                finalColorCode = spriteColorCode;
+            if (backgroundColorCode != null && renderingSpriteZero &&
                     spriteColorNumber != 0 && backgroundColorNumber != 0)
                 regPPUSTATUS.spriteZeroHit = true;
         }
-        img.setRGB(column - 1, scanline, finalColor.getRGB());
+        // TODO: color tinting/emphasis using PPUMASK
+        if (regPPUMASK.grayscale && (finalColorCode & 0xF) < 0xD)
+            finalColorCode &= 0xF0;
+        img.setRGB(column - 1, scanline, SYSTEM_PALETTE[finalColorCode].getRGB());
     }
 
     private void shiftBackgroundShiftRegisters() {
@@ -385,20 +389,17 @@ public class PPU extends MemoryMapped {
         }
     }
 
-    private Color getBackgroundPixelColor() {
+    private Integer getBackgroundPixelColorCode() {
         int pixel = 0x8000 >>> fineXScroll;
         backgroundColorNumber = ((backgroundPatternLowByteShiftRegister & pixel) != 0 ? 1 : 0) +
                 2 * ((backgroundPatternHighByteShiftRegister & pixel) != 0 ? 1 : 0);
         int attribute = ((backgroundAttributeLowByteShiftRegister & pixel) != 0 ? 1 : 0) +
                 2 * ((backgroundAttributeHighByteShiftRegister & pixel) != 0 ? 1 : 0);
         int colorCode = readByteFromPaletteMemory(attribute * 4 + backgroundColorNumber, true);
-        // TODO: color tinting/emphasis using PPUMASK
-        if (regPPUMASK.grayscale && (colorCode & 0xF) < 0xD)
-            colorCode &= 0xF0;
-        return SYSTEM_PALETTE[colorCode];
+        return colorCode;
     }
 
-    private Color getSpritePixelColor() {
+    private Integer getSpritePixelColorCode() {
         renderingSpriteZero = false;
         for (int i = 0; i < 8; i++) {
             int xPosition = spriteXPositions[i];
@@ -413,7 +414,7 @@ public class PPU extends MemoryMapped {
                         spriteColorNumber, true);
                 if (spriteColorNumber != 0) {
                     renderingSpriteZero = isSpriteZeroInScanline && i == 0;
-                    return SYSTEM_PALETTE[colorCode];
+                    return colorCode;
                 }
             }
         }
