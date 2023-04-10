@@ -50,7 +50,6 @@ public class PPU extends MemoryMapped {
     private int fineXScroll;
     private boolean firstByteWritten;
 
-    private boolean checkForSpriteZeroHit;
     private boolean isSpriteZeroLoadedToSecondaryOam;
     private boolean isSpriteZeroInScanline;
     private boolean renderingSpriteZero;
@@ -179,8 +178,6 @@ public class PPU extends MemoryMapped {
 
     public void clockTick(BufferedImage img, CPU cpu) {
         if (scanline >= -1 && scanline < 240) {
-            checkForSpriteZeroHit = regPPUMASK.showBackground &&
-                    regPPUMASK.showSprites && column > 7 && column < 255;
             if (scanline == -1 && column == 1) {
                 regPPUSTATUS.verticalBlank = false;
                 regPPUSTATUS.spriteOverflow = false;
@@ -211,9 +208,11 @@ public class PPU extends MemoryMapped {
                 else if (column == 65)
                     evaluateSprites();
                 Color backgroundColor = null, spriteColor = null;
-                if (regPPUMASK.showBackground)
+                if (column > 8 && regPPUMASK.showBackground ||
+                        column <= 8 && regPPUMASK.showBackgroundLeft)
                     backgroundColor = getBackgroundPixelColor();
-                if (regPPUMASK.showSprites)
+                if (column > 8 && regPPUMASK.showSprites ||
+                        column <= 8 && regPPUMASK.showSpritesLeft)
                     spriteColor = getSpritePixelColor();
                 renderPixel(backgroundColor, spriteColor, img);
                 if (column < 255) {
@@ -268,7 +267,7 @@ public class PPU extends MemoryMapped {
             if (spriteColorNumber != 0 && spriteHasPriorityOverBackground ||
                     backgroundColorNumber == 0)
                 finalColor = spriteColor;
-            if (checkForSpriteZeroHit && renderingSpriteZero &&
+            if (backgroundColor != null && renderingSpriteZero &&
                     spriteColorNumber != 0 && backgroundColorNumber != 0)
                 regPPUSTATUS.spriteZeroHit = true;
         }
