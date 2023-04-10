@@ -11,6 +11,7 @@ public class Cartridge extends MemoryMapped {
     private final byte prgROM[];
     private final byte chrROM[];
     public final Mirroring mirroring;
+    private boolean hasCHRram;
 
     public enum Mirroring {
         HORIZONTAL,
@@ -18,10 +19,12 @@ public class Cartridge extends MemoryMapped {
         FOUR_NAMETABLES
     }
 
-    public Cartridge(byte[] prgROM, byte[] chrROM, Mirroring mirroring) {
+    public Cartridge(byte[] prgROM, byte[] chrROM, Mirroring mirroring,
+            boolean hasCHRram) {
         this.prgROM = prgROM;
         this.chrROM = chrROM;
         this.mirroring = mirroring;
+        this.hasCHRram = hasCHRram;
     }
 
     @Override
@@ -43,7 +46,12 @@ public class Cartridge extends MemoryMapped {
         return chrROM[Short.toUnsignedInt(address) % chrROM.length];
     }
 
-    static public Cartridge fromINESFile(String filePath) throws IOException {
+    public void ppuWriteByte(short address, byte value) {
+        if (hasCHRram)
+            chrROM[Short.toUnsignedInt(address) % chrROM.length] = value;
+    }
+
+    public static Cartridge fromINESFile(String filePath) throws IOException {
         DataInputStream stream = new DataInputStream(new FileInputStream(filePath));
         final byte iNESHeader[] = { 0x4E, 0x45, 0x53, 0x1A };
         for (byte headerByte : iNESHeader)
@@ -63,8 +71,10 @@ public class Cartridge extends MemoryMapped {
             mirroring = Mirroring.HORIZONTAL;
         stream.readNBytes(8); // TODO
         // Assume no trainer
+        boolean hasCHRram = chrROMSize == 0;
         byte prgROM[] = stream.readNBytes(PRG_ROM_BLOCK_SIZE * prgROMSize);
-        byte chrROM[] = stream.readNBytes(CHR_ROM_BLOCK_SIZE * chrROMSize);
-        return new Cartridge(prgROM, chrROM, mirroring);
+        byte chrROM[] = hasCHRram ? new byte[CHR_ROM_BLOCK_SIZE] :
+                stream.readNBytes(CHR_ROM_BLOCK_SIZE * chrROMSize);
+        return new Cartridge(prgROM, chrROM, mirroring, hasCHRram);
     }
 }

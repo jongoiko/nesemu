@@ -558,10 +558,9 @@ public class PPU extends MemoryMapped {
 
     private void writeByteAtVramAddress(byte value) {
         short address = (short)(vramAddress & 0x3FFF);
-        //if (address < 0x2000)
-        //    patternMemory[(address & 0x1000) >>> 12][address & 0xFFF] = value;
-        //else
-        if (address >= 0x2000 && address < 0x3F00)
+        if (address < 0x2000)
+            cartridge.ppuWriteByte(address, value);
+        else if (address >= 0x2000 && address < 0x3F00)
             writeByteToNametableMemory(address & 0xFFF, value);
         else if (address >= 0x3F00)
             writeByteToPaletteMemory(address & 0x1F, value);
