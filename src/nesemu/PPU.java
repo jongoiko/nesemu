@@ -275,6 +275,8 @@ public class PPU extends MemoryMapped {
         // TODO: color tinting/emphasis using PPUMASK
         if (regPPUMASK.grayscale && (finalColorCode & 0xF) < 0xD)
             finalColorCode &= 0xF0;
+        if (finalColorCode >= SYSTEM_PALETTE.length)
+            finalColorCode = 0x0F;
         img.setRGB(column - 1, scanline, SYSTEM_PALETTE[finalColorCode].getRGB());
     }
 
@@ -395,7 +397,8 @@ public class PPU extends MemoryMapped {
                 2 * ((backgroundPatternHighByteShiftRegister & pixel) != 0 ? 1 : 0);
         int attribute = ((backgroundAttributeLowByteShiftRegister & pixel) != 0 ? 1 : 0) +
                 2 * ((backgroundAttributeHighByteShiftRegister & pixel) != 0 ? 1 : 0);
-        int colorCode = readByteFromPaletteMemory(attribute * 4 + backgroundColorNumber, true);
+        int colorCode = Byte.toUnsignedInt(
+                readByteFromPaletteMemory(attribute * 4 + backgroundColorNumber, true));
         return colorCode;
     }
 
@@ -410,8 +413,8 @@ public class PPU extends MemoryMapped {
                         2 * ((msb & 0x80) != 0 ? 1 : 0);
                 int palette = spriteAttributes[i] & 3;
                 spriteHasPriorityOverBackground = (spriteAttributes[i] & 0x20) == 0;
-                int colorCode = readByteFromPaletteMemory(16 + palette * 4 +
-                        spriteColorNumber, true);
+                int colorCode = Byte.toUnsignedInt(
+                        readByteFromPaletteMemory(16 + palette * 4 + spriteColorNumber, true));
                 if (spriteColorNumber != 0) {
                     renderingSpriteZero = isSpriteZeroInScanline && i == 0;
                     return colorCode;
