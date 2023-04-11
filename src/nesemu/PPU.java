@@ -273,9 +273,8 @@ public class PPU extends MemoryMapped {
         // TODO: color tinting/emphasis using PPUMASK
         if (regPPUMASK.grayscale && (finalColorCode & 0xF) < 0xD)
             finalColorCode &= 0xF0;
-        if (finalColorCode >= SYSTEM_PALETTE.length)
-            finalColorCode = 0x0F;
-        img.setRGB(column - 1, scanline, SYSTEM_PALETTE[finalColorCode].getRGB());
+        img.setRGB(column - 1, scanline,
+                SYSTEM_PALETTE[finalColorCode % SYSTEM_PALETTE.length].getRGB());
     }
 
     private void shiftBackgroundShiftRegisters() {
