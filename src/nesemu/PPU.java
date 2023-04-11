@@ -259,7 +259,7 @@ public class PPU extends MemoryMapped {
 
     private void renderPixel(Integer backgroundColorCode, Integer spriteColorCode,
             BufferedImage img) {
-        int finalColorCode = 0x0F;
+        int finalColorCode = Byte.toUnsignedInt(readByteFromPaletteMemory(0, true));
         if (backgroundColorCode != null)
             finalColorCode = backgroundColorCode;
         if (spriteColorCode != null) {
