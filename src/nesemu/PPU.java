@@ -547,9 +547,11 @@ public class PPU extends MemoryMapped {
     }
 
     private byte readByteFromVramAddress() {
-        if (vramAddress >= 0x3F00)
-            return readByteFromPaletteMemory(vramAddress & 0x1F, false);
         byte buffer = regPPUDATA;
+        if (vramAddress >= 0x3F00) {
+            regPPUDATA = readByteFromNametableMemory(vramAddress & 0xFFF);
+            return readByteFromPaletteMemory(vramAddress & 0x1F, false);
+        }
         if (vramAddress < 0x2000)
             regPPUDATA = cartridge.ppuReadByte(vramAddress);
         else if (vramAddress >= 0x2000 && vramAddress < 0x3F00)
