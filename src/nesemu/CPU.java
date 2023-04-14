@@ -346,7 +346,7 @@ public class CPU extends MemoryMapped {
         new Instruction("PLA", AddressingMode.IMPLIED, 4,     () -> PLA()),
         new Instruction("ADC", AddressingMode.IMMEDIATE, 2,   () -> ADC()),
         new Instruction("ROR", AddressingMode.ACCUMULATOR, 2, () -> ROR()),
-        undefinedInstruction,
+        new Instruction("*ARR", AddressingMode.IMMEDIATE, 2,  () -> ARR()),
         new Instruction("JMP", AddressingMode.INDIRECT, 5,    () -> JMP()),
         new Instruction("ADC", AddressingMode.ABSOLUTE, 4,    () -> ADC()),
         new Instruction("ROR", AddressingMode.ABSOLUTE, 6,    () -> ROR()),
@@ -371,7 +371,7 @@ public class CPU extends MemoryMapped {
         // 8-
         new Instruction("*NOP", AddressingMode.IMMEDIATE, 2,  () -> NOP()),
         new Instruction("STA", AddressingMode.INDIRECT_X, 6,  () -> STA()),
-        undefinedInstruction,
+        new Instruction("*NOP", AddressingMode.IMMEDIATE, 2,  () -> NOP()),
         new Instruction("*SAX", AddressingMode.INDIRECT_X, 6, () -> SAX()),
         new Instruction("STY", AddressingMode.ZEROPAGE, 3,    () -> STY()),
         new Instruction("STA", AddressingMode.ZEROPAGE, 3,    () -> STA()),
@@ -557,6 +557,11 @@ public class CPU extends MemoryMapped {
         regA &= addressSpace.readByte(operandEffectiveAddress);
         setFlag(StatusFlag.ZERO, regA == 0);
         setFlag(StatusFlag.NEGATIVE, (regA & 0x80) != 0);
+    }
+
+    private void ARR() {
+        AND();
+        ROR();
     }
 
     private void ASL() {
