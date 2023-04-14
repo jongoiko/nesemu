@@ -218,12 +218,12 @@ public class PPU extends MemoryMapped {
                     decrementSpritesXPositions();
                 }
             }
+            if (column >= 257 && column <= 320)
+                regOAMADDR = 0;
         } else if (scanline == 260 && column == 340 && frameCount % 2 != 0) {
             scanline = -1;
             column = 0;
         }
-        if (column >= 257 && column <= 320 && scanline < 240)
-            regOAMADDR = 0;
         if (scanline == -1 && column >= 280 && column <= 304)
             copyVramAddressVerticalPosition();
         else if (scanline == 241 && column == 1) {
