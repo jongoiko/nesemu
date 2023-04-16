@@ -49,8 +49,11 @@ public class Controller extends MemoryMapped {
         if (address == 0x4016) {
             int bit = buffer & 1;
             buffer >>>= 1;
-            return (byte)bit;
+            buffer |= 0x80;
+            return (byte)(bit | 0x40);
         }
+        if (address == 0x4017)
+            return 0x40;
         return 0;
     }
 
