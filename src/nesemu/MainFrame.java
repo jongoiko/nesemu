@@ -47,6 +47,7 @@ public class MainFrame extends javax.swing.JFrame {
             long frames = 0;
             long startTime = System.currentTimeMillis();
             final DecimalFormat df = new DecimalFormat("0.00");
+            nes.reset();
             while (!Thread.currentThread().isInterrupted()) {
                 long frameStartTime = System.nanoTime(), frameEndTime;
                 mf.nes.runUntilFrameReady(mf.panel.img);
