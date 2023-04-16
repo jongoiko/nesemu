@@ -19,6 +19,7 @@ public class CPU extends MemoryMapped {
     private int cycleCount;
 
     public boolean requestNMI;
+    private boolean assertNMI;
 
     public CPU() {
         regP = (byte)0x24;
@@ -112,9 +113,11 @@ public class CPU extends MemoryMapped {
         }
         if (cyclesUntilNextInstruction <= 0) {
             // Check for interrupts, etc.
-            if (requestNMI)
+            if (assertNMI)
                 serviceNMI();
             else {
+                if (requestNMI)
+                    assertNMI = true;
                 // short prevRegPC = regPC;
                 final byte opcode = readByteAtPCAndIncrement();
                 final Instruction instruction = instructionLookupTable[Byte.toUnsignedInt(opcode)];
@@ -144,6 +147,7 @@ public class CPU extends MemoryMapped {
         regPC = (short)Byte.toUnsignedInt(addressSpace.readByte((short)0xFFFA));
         regPC += addressSpace.readByte((short)0xFFFB) << 8;
         requestNMI = false;
+        assertNMI = false;
         cyclesUntilNextInstruction += 7;
     }
 
