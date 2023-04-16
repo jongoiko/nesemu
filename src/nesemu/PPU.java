@@ -494,7 +494,7 @@ public class PPU extends MemoryMapped {
         }
     }
 
-    private byte reverseBits(byte b) {
+    private static byte reverseBits(byte b) {
         byte out = 0;
         int in = Byte.toUnsignedInt(b);
         for (int i = 0; i < 8; i++) {
