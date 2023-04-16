@@ -22,7 +22,6 @@ public class CPU extends MemoryMapped {
 
     public CPU() {
         regP = (byte)0x24;
-        regS = (byte)0xFD;
         requestNMI = false;
     }
 
