@@ -11,7 +11,7 @@ public class Cartridge extends MemoryMapped {
     private final byte prgROM[];
     private final byte chrROM[];
     public final Mirroring mirroring;
-    private boolean hasCHRram;
+    private boolean hasChrRAM;
 
     public enum Mirroring {
         HORIZONTAL,
@@ -20,11 +20,11 @@ public class Cartridge extends MemoryMapped {
     }
 
     public Cartridge(byte[] prgROM, byte[] chrROM, Mirroring mirroring,
-            boolean hasCHRram) {
+            boolean hasChrRAM) {
         this.prgROM = prgROM;
         this.chrROM = chrROM;
         this.mirroring = mirroring;
-        this.hasCHRram = hasCHRram;
+        this.hasChrRAM = hasChrRAM;
     }
 
     @Override
@@ -47,7 +47,7 @@ public class Cartridge extends MemoryMapped {
     }
 
     public void ppuWriteByte(short address, byte value) {
-        if (hasCHRram)
+        if (hasChrRAM)
             chrROM[Short.toUnsignedInt(address) % chrROM.length] = value;
     }
 
@@ -71,10 +71,10 @@ public class Cartridge extends MemoryMapped {
             mirroring = Mirroring.HORIZONTAL;
         stream.readNBytes(8); // TODO
         // Assume no trainer
-        boolean hasCHRram = chrROMSize == 0;
+        boolean hasChrRAM = chrROMSize == 0;
         byte prgROM[] = stream.readNBytes(PRG_ROM_BLOCK_SIZE * prgROMSize);
-        byte chrROM[] = hasCHRram ? new byte[CHR_ROM_BLOCK_SIZE] :
+        byte chrROM[] = hasChrRAM ? new byte[CHR_ROM_BLOCK_SIZE] :
                 stream.readNBytes(CHR_ROM_BLOCK_SIZE * chrROMSize);
-        return new Cartridge(prgROM, chrROM, mirroring, hasCHRram);
+        return new Cartridge(prgROM, chrROM, mirroring, hasChrRAM);
     }
 }
