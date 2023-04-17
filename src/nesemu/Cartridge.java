@@ -10,7 +10,10 @@ public class Cartridge extends MemoryMapped {
 
     private final byte prgROM[];
     private final byte chrROM[];
+    private final byte prgRAM[];
     public final Mirroring mirroring;
+
+    boolean hasPrgRAM;
     private boolean hasChrRAM;
 
     public enum Mirroring {
@@ -20,10 +23,12 @@ public class Cartridge extends MemoryMapped {
     }
 
     public Cartridge(byte[] prgROM, byte[] chrROM, Mirroring mirroring,
-            boolean hasChrRAM) {
+            boolean hasPrgRAM, boolean hasChrRAM) {
         this.prgROM = prgROM;
         this.chrROM = chrROM;
+        this.prgRAM = new byte[0x2000];
         this.mirroring = mirroring;
+        this.hasPrgRAM = hasPrgRAM;
         this.hasChrRAM = hasChrRAM;
     }
 
@@ -34,12 +39,17 @@ public class Cartridge extends MemoryMapped {
 
     @Override
     byte readByteFromDevice(short address) {
-        return prgROM[Short.toUnsignedInt(address) % prgROM.length];
+        int intAddress = Short.toUnsignedInt(address);
+        if (hasPrgRAM && intAddress >= 0x6000 && intAddress < 0x8000)
+            return prgRAM[intAddress % prgRAM.length];
+        return prgROM[intAddress % prgROM.length];
     }
 
     @Override
     void writeByteToDevice(short address, byte value) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        int intAddress = Short.toUnsignedInt(address);
+        if (hasPrgRAM && intAddress >= 0x6000 && intAddress < 0x8000)
+            prgRAM[intAddress % prgRAM.length] = value;
     }
 
     public byte ppuReadByte(short address) {
@@ -72,9 +82,10 @@ public class Cartridge extends MemoryMapped {
         stream.readNBytes(8); // TODO
         // Assume no trainer
         boolean hasChrRAM = chrROMSize == 0;
+        boolean hasPrgRAM = (flags6 & 2) != 0;
         byte prgROM[] = stream.readNBytes(PRG_ROM_BLOCK_SIZE * prgROMSize);
         byte chrROM[] = hasChrRAM ? new byte[CHR_ROM_BLOCK_SIZE] :
                 stream.readNBytes(CHR_ROM_BLOCK_SIZE * chrROMSize);
-        return new Cartridge(prgROM, chrROM, mirroring, hasChrRAM);
+        return new Cartridge(prgROM, chrROM, mirroring, hasPrgRAM, hasChrRAM);
     }
 }
