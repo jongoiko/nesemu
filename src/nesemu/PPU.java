@@ -540,6 +540,8 @@ public class PPU extends MemoryMapped {
     private void writeByteToNametableMemory(int address, byte value) {
         int nametableNumber;
         switch (cartridge.mirroring) {
+            case SINGLE_SCREEN_LOWER -> nametableNumber = 0;
+            case SINGLE_SCREEN_UPPER -> nametableNumber = 1;
             case HORIZONTAL -> nametableNumber = (address & 0x800) >>> 11;
             case VERTICAL ->   nametableNumber = (address & 0x400) >>> 10;
             default ->         nametableNumber = (address & 0xC00) >>> 10;

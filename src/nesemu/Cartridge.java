@@ -18,6 +18,8 @@ public abstract class Cartridge extends MemoryMapped {
     boolean hasChrRAM;
 
     public enum Mirroring {
+        SINGLE_SCREEN_LOWER,
+        SINGLE_SCREEN_UPPER,
         HORIZONTAL,
         VERTICAL,
         FOUR_NAMETABLES
@@ -101,6 +103,9 @@ public abstract class Cartridge extends MemoryMapped {
         switch (mapperNumber) {
             case 0 -> {
                 return new Mapper000Cartridge(prgROM, chrROM, mirroring, hasPrgRAM, hasChrRAM);
+            }
+            case 1 -> {
+                return new Mapper001Cartridge(prgROM, chrROM, mirroring, hasPrgRAM, hasChrRAM);
             }
         }
         throw new UnsupportedOperationException("Unsupported mapper (number " +
