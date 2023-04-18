@@ -4,17 +4,18 @@ import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-public class Cartridge extends MemoryMapped {
+public abstract class Cartridge extends MemoryMapped {
     private final static int PRG_ROM_BLOCK_SIZE = 16384;
     private final static int CHR_ROM_BLOCK_SIZE = 8192;
 
-    private final byte prgROM[];
-    private final byte chrROM[];
-    private final byte prgRAM[];
-    public final Mirroring mirroring;
+    final byte prgROM[];
+    final byte chrROM[];
+    final byte prgRAM[];
+
+    public Mirroring mirroring;
 
     boolean hasPrgRAM;
-    private boolean hasChrRAM;
+    boolean hasChrRAM;
 
     public enum Mirroring {
         HORIZONTAL,
@@ -32,6 +33,9 @@ public class Cartridge extends MemoryMapped {
         this.hasChrRAM = hasChrRAM;
     }
 
+    abstract byte readMappedPrgByte(short address);
+    abstract void writeMappedPrgByte(short address, byte value);
+
     @Override
     boolean addressIsMapped(short address) {
         return Short.toUnsignedInt(address) >= 0x4020;
@@ -42,7 +46,7 @@ public class Cartridge extends MemoryMapped {
         int intAddress = Short.toUnsignedInt(address);
         if (hasPrgRAM && intAddress >= 0x6000 && intAddress < 0x8000)
             return prgRAM[intAddress % prgRAM.length];
-        return prgROM[intAddress % prgROM.length];
+        return readMappedPrgByte(address);
     }
 
     @Override
@@ -50,6 +54,8 @@ public class Cartridge extends MemoryMapped {
         int intAddress = Short.toUnsignedInt(address);
         if (hasPrgRAM && intAddress >= 0x6000 && intAddress < 0x8000)
             prgRAM[intAddress % prgRAM.length] = value;
+        else
+            writeMappedPrgByte(address, value);
     }
 
     public byte ppuReadByte(short address) {
@@ -86,6 +92,18 @@ public class Cartridge extends MemoryMapped {
         byte prgROM[] = stream.readNBytes(PRG_ROM_BLOCK_SIZE * prgROMSize);
         byte chrROM[] = hasChrRAM ? new byte[CHR_ROM_BLOCK_SIZE] :
                 stream.readNBytes(CHR_ROM_BLOCK_SIZE * chrROMSize);
-        return new Cartridge(prgROM, chrROM, mirroring, hasPrgRAM, hasChrRAM);
+        return assignMapper(prgROM, chrROM, mirroring, hasPrgRAM, hasChrRAM, mapperNumber);
+    }
+
+    private static Cartridge assignMapper(byte prgROM[], byte chrROM[],
+            Mirroring mirroring, boolean hasPrgRAM, boolean hasChrRAM, int mapperNumber)
+            throws UnsupportedOperationException {
+        switch (mapperNumber) {
+            case 0 -> {
+                return new Mapper000Cartridge(prgROM, chrROM, mirroring, hasPrgRAM, hasChrRAM);
+            }
+        }
+        throw new UnsupportedOperationException("Unsupported mapper (number " +
+                mapperNumber + ")");
     }
 }
