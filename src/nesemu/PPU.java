@@ -444,11 +444,13 @@ public class PPU extends MemoryMapped {
                 }
                 visibleSpriteCount++;
             }
-            if (visibleSpriteCount >= 9)
+            if (visibleSpriteCount >= 9) {
+                if (isRenderingEnabled())
+                    regPPUSTATUS.spriteOverflow = true;
                 break;
+            }
             spriteNumber++;
         }
-        regPPUSTATUS.spriteOverflow = visibleSpriteCount == 9;
     }
 
     void readSpriteData() {
