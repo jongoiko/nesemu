@@ -210,7 +210,8 @@ public class PPU extends MemoryMapped {
                 Integer backgroundColorCode = null, spriteColorCode = null;
                 if (regPPUMASK.showBackground && (column > 8 || regPPUMASK.showBackgroundLeft))
                     backgroundColorCode = getBackgroundPixelColorCode();
-                if (regPPUMASK.showSprites && (column > 8 || regPPUMASK.showSpritesLeft))
+                if (scanline > 0 && regPPUMASK.showSprites &&
+                        (column > 8 || regPPUMASK.showSpritesLeft))
                     spriteColorCode = getSpritePixelColorCode();
                 renderPixel(backgroundColorCode, spriteColorCode, img);
                 if (column < 255) {
