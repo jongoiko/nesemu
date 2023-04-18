@@ -29,6 +29,7 @@ public class NES {
     public void reset() {
         ppu.reset();
         cpu.reset();
+        cartridge.reset();
     }
 
     public void exchangeCartridge(String cartridgeFilePath) throws IOException {

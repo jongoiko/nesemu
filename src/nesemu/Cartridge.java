@@ -69,6 +69,10 @@ public abstract class Cartridge extends MemoryMapped {
             chrROM[Short.toUnsignedInt(address) % chrROM.length] = value;
     }
 
+    public void reset() {
+
+    }
+
     public static Cartridge fromINESFile(String filePath) throws IOException {
         DataInputStream stream = new DataInputStream(new FileInputStream(filePath));
         final byte iNESHeader[] = { 0x4E, 0x45, 0x53, 0x1A };
