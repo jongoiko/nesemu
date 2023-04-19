@@ -1,16 +1,20 @@
 package nesemu;
 
 public class Mapper001Cartridge extends Cartridge {
-    private static final int PRG_BANK_SIZE = 16384;
+    private static final int PRG_ROM_BANK_SIZE = 16384;
+    private static final int PRG_RAM_BANK_SIZE = 8192;
     private static final int CHR_BANK_SIZE = 8192;
 
     private byte shiftRegister;
     private PrgBankMode prgBankMode;
     private ChrBankMode chrBankMode;
 
-    private int prgBankSelect;
+    private int prgROMBankSelect;
     private int chrLowerBankSelect;
     private int chrUpperBankSelect;
+    private int prgRAMBankSelect;
+
+    private boolean upper256KBank;
 
     private enum PrgBankMode {
         SWITCH_32KB,
@@ -26,6 +30,7 @@ public class Mapper001Cartridge extends Cartridge {
     public Mapper001Cartridge(byte[] prgROM, byte[] chrROM, Mirroring mirroring,
             boolean hasPrgRAM, boolean hasChrRAM) {
         super(prgROM, chrROM, mirroring, hasPrgRAM, hasChrRAM);
+        prgRAM = new byte[32768];
         shiftRegister = (byte)0x10;
         prgBankMode = PrgBankMode.FIX_16KB_SECOND_HALF;
     }
@@ -35,14 +40,15 @@ public class Mapper001Cartridge extends Cartridge {
         int mappedAddress = Short.toUnsignedInt(address), baseAddress = 0;
         switch (prgBankMode) {
             case FIX_16KB_FIRST_HALF ->
-                baseAddress = mappedAddress >= 0xC000 ? prgBankSelect * PRG_BANK_SIZE : 0;
+                baseAddress = mappedAddress >= 0xC000 ? prgROMBankSelect * PRG_ROM_BANK_SIZE : 0;
             case FIX_16KB_SECOND_HALF ->
-                baseAddress = mappedAddress >= 0xC000 ? prgROM.length - PRG_BANK_SIZE :
-                        prgBankSelect * PRG_BANK_SIZE;
+                baseAddress = (mappedAddress >= 0xC000 ? 0xF : prgROMBankSelect) * PRG_ROM_BANK_SIZE;
             case SWITCH_32KB ->
-                baseAddress = (prgBankSelect & ~1) * 2 * PRG_BANK_SIZE;
+                baseAddress = (prgROMBankSelect >>> 1) * 2 * PRG_ROM_BANK_SIZE;
         }
-        return prgROM[(baseAddress + (mappedAddress % PRG_BANK_SIZE)) % prgROM.length];
+        if (upper256KBank)
+            baseAddress += 262144;
+        return prgROM[(baseAddress + (mappedAddress % PRG_ROM_BANK_SIZE)) % prgROM.length];
     }
 
     @Override
@@ -60,8 +66,19 @@ public class Mapper001Cartridge extends Cartridge {
                     reset();
                 }
             }
-        } else if (intAddress >= 0x6000 && intAddress < 0x8000 && hasPrgRAM)
-            prgRAM[Short.toUnsignedInt(address) % prgRAM.length] = value;
+        }
+    }
+
+    @Override
+    byte readPrgRAMByte(short address) {
+        return prgRAM[(prgRAMBankSelect * PRG_RAM_BANK_SIZE +
+                Short.toUnsignedInt(address) % PRG_RAM_BANK_SIZE) % prgRAM.length];
+    }
+
+    @Override
+    void writePrgRAMByte(short address, byte value) {
+        prgRAM[(prgRAMBankSelect * PRG_RAM_BANK_SIZE +
+                Short.toUnsignedInt(address) % PRG_RAM_BANK_SIZE) % prgRAM.length] = value;
     }
 
     @Override
@@ -78,17 +95,25 @@ public class Mapper001Cartridge extends Cartridge {
         return chrROM[(baseAddress + mappedAddress) % chrROM.length];
     }
 
-    private void reset() {
+    @Override
+    public void reset() {
         shiftRegister = (byte)0x10;
         prgBankMode = PrgBankMode.FIX_16KB_SECOND_HALF;
     }
 
     private void updateBanks(int registerSelectBits) {
         switch (registerSelectBits) {
-            case 0 ->  updateBankingModes();
-            case 1 ->  chrLowerBankSelect = shiftRegister;
-            case 2 ->  chrUpperBankSelect = shiftRegister;
-            default -> prgBankSelect = shiftRegister & 0xF; // TODO: upper bit
+            case 0 -> updateBankingModes();
+            case 1 -> {
+                chrLowerBankSelect = shiftRegister;
+                updateSpecialVariantBanks();
+            }
+            case 2 -> {
+                chrUpperBankSelect = shiftRegister;
+                if (chrBankMode != ChrBankMode.SWITCH_8KB)
+                    updateSpecialVariantBanks();
+            }
+            default -> prgROMBankSelect = shiftRegister & 0xF;
         }
     }
 
@@ -106,5 +131,10 @@ public class Mapper001Cartridge extends Cartridge {
         }
         chrBankMode = (shiftRegister & 0x10) != 0 ?
                 ChrBankMode.SWITCH_TWO_4KB : ChrBankMode.SWITCH_8KB;
+    }
+
+    private void updateSpecialVariantBanks() {
+        prgRAMBankSelect = (shiftRegister & 0xC) >>> 2;
+        upper256KBank = (shiftRegister & 0x10) != 0;
     }
 }
