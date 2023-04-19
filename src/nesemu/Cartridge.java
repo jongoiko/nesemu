@@ -119,6 +119,9 @@ public abstract class Cartridge extends MemoryMapped {
             case 1 -> {
                 return new Mapper001Cartridge(prgROM, chrROM, mirroring, hasPrgRAM, hasChrRAM);
             }
+            case 2 -> {
+                return new Mapper002Cartridge(prgROM, chrROM, mirroring, hasPrgRAM, hasChrRAM);
+            }
         }
         throw new UnsupportedOperationException("Unsupported mapper (number " +
                 mapperNumber + ")");
