@@ -52,9 +52,7 @@ public class Controller extends MemoryMapped {
             buffer |= 0x80;
             return (byte)(bit | 0x40);
         }
-        if (address == 0x4017)
-            return 0x40;
-        return 0;
+        return 0x40;
     }
 
     @Override
