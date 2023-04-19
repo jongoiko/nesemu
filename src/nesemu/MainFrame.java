@@ -205,7 +205,8 @@ public class MainFrame extends javax.swing.JFrame {
 
     private void loadROMMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loadROMMenuItemActionPerformed
         JFileChooser fileChooser = new JFileChooser();
-        FileNameExtensionFilter filter = new FileNameExtensionFilter("iNES files", "nes");
+        FileNameExtensionFilter filter = new FileNameExtensionFilter(
+                "iNES cartridge files (.nes)", "nes");
         fileChooser.setFileFilter(filter);
         int result = fileChooser.showOpenDialog(null);
         if (result == JFileChooser.APPROVE_OPTION) {
