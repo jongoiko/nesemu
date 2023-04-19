@@ -11,7 +11,8 @@ public class NES {
     private Cartridge cartridge;
     public final Controller controller;
 
-    public NES(String cartridgeFilePath) throws IOException {
+    public NES(String cartridgeFilePath)
+            throws IOException, UnsupportedMapperException {
         addressSpace = new AddressSpace();
         cpu = new CPU();
         ram = new RAM();
@@ -32,7 +33,8 @@ public class NES {
         cartridge.reset();
     }
 
-    public void exchangeCartridge(String cartridgeFilePath) throws IOException {
+    public void exchangeCartridge(String cartridgeFilePath)
+            throws IOException, UnsupportedMapperException {
         addressSpace.removeDevice(cartridge);
         cartridge = Cartridge.fromINESFile(cartridgeFilePath);
         addressSpace.addDevice(cartridge);

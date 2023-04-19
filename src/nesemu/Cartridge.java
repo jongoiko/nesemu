@@ -81,7 +81,8 @@ public abstract class Cartridge extends MemoryMapped {
 
     }
 
-    public static Cartridge fromINESFile(String filePath) throws IOException {
+    public static Cartridge fromINESFile(String filePath)
+            throws IOException, UnsupportedMapperException {
         DataInputStream stream = new DataInputStream(new FileInputStream(filePath));
         final byte iNESHeader[] = { 0x4E, 0x45, 0x53, 0x1A };
         for (byte headerByte : iNESHeader)
@@ -111,7 +112,7 @@ public abstract class Cartridge extends MemoryMapped {
 
     private static Cartridge assignMapper(byte prgROM[], byte chrROM[],
             Mirroring mirroring, boolean hasPrgRAM, boolean hasChrRAM, int mapperNumber)
-            throws UnsupportedOperationException {
+            throws UnsupportedMapperException {
         switch (mapperNumber) {
             case 0 -> {
                 return new Mapper000Cartridge(prgROM, chrROM, mirroring, hasPrgRAM, hasChrRAM);
@@ -126,7 +127,6 @@ public abstract class Cartridge extends MemoryMapped {
                 return new Mapper003Cartridge(prgROM, chrROM, mirroring, hasPrgRAM, hasChrRAM);
             }
         }
-        throw new UnsupportedOperationException("Unsupported mapper (number " +
-                mapperNumber + ")");
+        throw new UnsupportedMapperException(mapperNumber);
     }
 }
