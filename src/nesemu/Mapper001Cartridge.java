@@ -36,7 +36,7 @@ public class Mapper001Cartridge extends Cartridge {
     }
 
     @Override
-    public byte readMappedPrgByte(short address) {
+    public byte readPrgROMByte(short address) {
         int mappedAddress = Short.toUnsignedInt(address), baseAddress = 0;
         switch (prgBankMode) {
             case FIX_16KB_FIRST_HALF ->
@@ -52,7 +52,7 @@ public class Mapper001Cartridge extends Cartridge {
     }
 
     @Override
-    void writeMappedPrgByte(short address, byte value) {
+    void writePrgROMByte(short address, byte value) {
         int intAddress = Short.toUnsignedInt(address);
         if (intAddress >= 0x8000) {
             if ((value & 0x80) != 0)

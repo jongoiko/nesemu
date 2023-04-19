@@ -7,12 +7,12 @@ public class Mapper000Cartridge extends Cartridge {
     }
 
     @Override
-    byte readMappedPrgByte(short address) {
+    byte readPrgROMByte(short address) {
         return prgROM[Short.toUnsignedInt(address) % prgROM.length];
     }
 
     @Override
-    void writeMappedPrgByte(short address, byte value) {
+    void writePrgROMByte(short address, byte value) {
         prgROM[Short.toUnsignedInt(address) % prgROM.length] = value;
     }
 }

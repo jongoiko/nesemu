@@ -11,7 +11,7 @@ public class Mapper002Cartridge extends Cartridge {
     }
 
     @Override
-    byte readMappedPrgByte(short address) {
+    byte readPrgROMByte(short address) {
         int mappedAddress = Short.toUnsignedInt(address);
         mappedAddress = (mappedAddress >= 0xC000 ? prgROM.length - BANK_SIZE :
                 bankSelect * BANK_SIZE) + mappedAddress % BANK_SIZE;
@@ -19,7 +19,7 @@ public class Mapper002Cartridge extends Cartridge {
     }
 
     @Override
-    void writeMappedPrgByte(short address, byte value) {
+    void writePrgROMByte(short address, byte value) {
         if (Short.toUnsignedInt(address) >= 0x8000)
             bankSelect = value & 0xFF;
     }

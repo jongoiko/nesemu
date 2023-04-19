@@ -35,8 +35,8 @@ public abstract class Cartridge extends MemoryMapped {
         this.hasChrRAM = hasChrRAM;
     }
 
-    abstract byte readMappedPrgByte(short address);
-    abstract void writeMappedPrgByte(short address, byte value);
+    abstract byte readPrgROMByte(short address);
+    abstract void writePrgROMByte(short address, byte value);
 
     @Override
     boolean addressIsMapped(short address) {
@@ -48,7 +48,7 @@ public abstract class Cartridge extends MemoryMapped {
         int intAddress = Short.toUnsignedInt(address);
         if (hasPrgRAM && intAddress >= 0x6000 && intAddress < 0x8000)
             return readPrgRAMByte(address);
-        return readMappedPrgByte(address);
+        return readPrgROMByte(address);
     }
 
     @Override
@@ -57,7 +57,7 @@ public abstract class Cartridge extends MemoryMapped {
         if (hasPrgRAM && intAddress >= 0x6000 && intAddress < 0x8000)
             writePrgRAMByte(address, value);
         else
-            writeMappedPrgByte(address, value);
+            writePrgROMByte(address, value);
     }
 
     byte readPrgRAMByte(short address) {

@@ -11,12 +11,12 @@ public class Mapper003Cartridge extends Cartridge {
     }
 
     @Override
-    byte readMappedPrgByte(short address) {
+    byte readPrgROMByte(short address) {
         return prgROM[Short.toUnsignedInt(address) % prgROM.length];
     }
 
     @Override
-    void writeMappedPrgByte(short address, byte value) {
+    void writePrgROMByte(short address, byte value) {
         if (Short.toUnsignedInt(address) >= 0x8000)
             bankSelect = Byte.toUnsignedInt(value);
     }
