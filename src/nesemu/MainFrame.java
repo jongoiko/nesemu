@@ -17,7 +17,7 @@ public class MainFrame extends javax.swing.JFrame {
     private static final int TARGET_FPS = 60;
     private static final int NANOSECS_PER_FRAME = (int)((1.0 / TARGET_FPS) * 1000000000);
     private NES nes;
-    private Thread nesRunnerThread;
+    private NESRunnerThread nesRunnerThread;
 
     final ScreenPanel panel;
     final javax.swing.JLabel fpsLabel;
@@ -35,10 +35,10 @@ public class MainFrame extends javax.swing.JFrame {
         panel.init();
     }
 
-    class NESRunner implements Runnable {
+    class NESRunnerThread extends Thread {
         private final MainFrame mf;
 
-        public NESRunner(MainFrame mf) {
+        public NESRunnerThread(MainFrame mf) {
             this.mf = mf;
         }
 
@@ -59,6 +59,17 @@ public class MainFrame extends javax.swing.JFrame {
                 do {
                     frameEndTime = System.nanoTime();
                 } while (frameEndTime - frameStartTime < NANOSECS_PER_FRAME);
+            }
+        }
+
+        public void stopRunning() {
+            interrupt();
+            while (isAlive()) {
+                try {
+                    join();
+                } catch (InterruptedException ex) {
+
+                }
             }
         }
     }
@@ -213,13 +224,13 @@ public class MainFrame extends javax.swing.JFrame {
             String filePath = fileChooser.getSelectedFile().getAbsolutePath();
             try {
                 if (nes == null) {
-                    nesRunnerThread = new Thread(new NESRunner(this));
+                    nesRunnerThread = new NESRunnerThread(this);
                     nes = new NES(filePath);
                     nesRunnerThread.start();
                 } else {
-                    nesRunnerThread.interrupt();
+                    nesRunnerThread.stopRunning();
                     nes.exchangeCartridge(filePath);
-                    nesRunnerThread = new Thread(new NESRunner(this));
+                    nesRunnerThread = new NESRunnerThread(this);
                     nesRunnerThread.start();
                 }
                 requestFocus();
