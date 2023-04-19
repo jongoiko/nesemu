@@ -226,6 +226,12 @@ public class MainFrame extends javax.swing.JFrame {
             } catch (IOException ex) {
                 Logger.getLogger(this.getClass().getName())
                         .log(Level.SEVERE, null, ex);
+            } catch (UnsupportedMapperException ex) {
+                String fileName = fileChooser.getSelectedFile().getName();
+                JOptionPane.showMessageDialog(null,
+                        "The mapper associated to \"" + fileName + "\" (iNES mapper number " +
+                        ex.getMapperNumber() + ") is not supported yet.",
+                        "Unsupported mapper", JOptionPane.ERROR_MESSAGE);
             }
         }
     }//GEN-LAST:event_loadROMMenuItemActionPerformed
