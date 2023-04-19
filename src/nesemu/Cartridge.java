@@ -10,7 +10,7 @@ public abstract class Cartridge extends MemoryMapped {
 
     final byte prgROM[];
     final byte chrROM[];
-    final byte prgRAM[];
+    byte prgRAM[];
 
     public Mirroring mirroring;
 
@@ -47,7 +47,7 @@ public abstract class Cartridge extends MemoryMapped {
     byte readByteFromDevice(short address) {
         int intAddress = Short.toUnsignedInt(address);
         if (hasPrgRAM && intAddress >= 0x6000 && intAddress < 0x8000)
-            return prgRAM[intAddress % prgRAM.length];
+            return readPrgRAMByte(address);
         return readMappedPrgByte(address);
     }
 
@@ -55,9 +55,17 @@ public abstract class Cartridge extends MemoryMapped {
     void writeByteToDevice(short address, byte value) {
         int intAddress = Short.toUnsignedInt(address);
         if (hasPrgRAM && intAddress >= 0x6000 && intAddress < 0x8000)
-            prgRAM[intAddress % prgRAM.length] = value;
+            writePrgRAMByte(address, value);
         else
             writeMappedPrgByte(address, value);
+    }
+
+    byte readPrgRAMByte(short address) {
+        return prgRAM[Short.toUnsignedInt(address) % prgRAM.length];
+    }
+
+    void writePrgRAMByte(short address, byte value) {
+        prgRAM[Short.toUnsignedInt(address) % prgRAM.length] = value;
     }
 
     public byte ppuReadByte(short address) {
