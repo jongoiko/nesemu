@@ -268,8 +268,6 @@ public class PPU extends MemoryMapped {
                     spriteColorNumber != 0 && backgroundColorNumber != 0)
                 regPPUSTATUS.spriteZeroHit = true;
         }
-        if (regPPUMASK.grayscale && (finalColorCode & 0xF) < 0xD)
-            finalColorCode &= 0xF0;
         int colorEmphasisOffset = regPPUMASK.emphasisBits * NUM_COLORS;
         img.setRGB(column - 1, scanline, SYSTEM_PALETTE[colorEmphasisOffset +
                 finalColorCode % NUM_COLORS]);
@@ -512,11 +510,10 @@ public class PPU extends MemoryMapped {
     }
 
     private byte readByteFromPaletteMemory(int address, boolean rendering) {
-        if (address % 4 != 0)
-            return paletteMemory[address];
-        if (rendering)
-            return paletteMemory[0];
-        return paletteMemory[address & ~0x10];
+        int paletteMemoryIndex = address % 4 != 0 ? address :
+                rendering ? 0 : address & ~0x10;
+        byte colorByte = paletteMemory[paletteMemoryIndex];
+        return (byte)(regPPUMASK.grayscale ? colorByte & 0x30 : colorByte);
     }
 
     private void writeByteToPaletteMemory(int address, byte value) {
