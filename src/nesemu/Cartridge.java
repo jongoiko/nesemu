@@ -81,13 +81,13 @@ public abstract class Cartridge extends MemoryMapped {
 
     }
 
-    public static Cartridge fromINESFile(String filePath)
-            throws IOException, UnsupportedMapperException {
+    public static Cartridge fromINESFile(String filePath) throws IOException,
+            UnsupportedMapperException, IllegalArgumentException {
         DataInputStream stream = new DataInputStream(new FileInputStream(filePath));
         final byte iNESHeader[] = { 0x4E, 0x45, 0x53, 0x1A };
         for (byte headerByte : iNESHeader)
             if (stream.readByte() != headerByte)
-                throw new IOException("Invalid iNES header");
+                throw new IllegalArgumentException("Invalid iNES header");
         final byte prgROMSize = stream.readByte();
         final byte chrROMSize = stream.readByte();
         final byte flags6 = stream.readByte();

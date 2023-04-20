@@ -11,8 +11,8 @@ public class NES {
     private Cartridge cartridge;
     public final Controller controller;
 
-    public NES(String cartridgeFilePath)
-            throws IOException, UnsupportedMapperException {
+    public NES(String cartridgeFilePath) throws IOException,
+            UnsupportedMapperException, IllegalArgumentException {
         addressSpace = new AddressSpace();
         cpu = new CPU();
         ram = new RAM();
