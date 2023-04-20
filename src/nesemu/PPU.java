@@ -1,32 +1,20 @@
 package nesemu;
 
-import java.awt.Color;
 import java.awt.image.BufferedImage;
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class PPU extends MemoryMapped {
     private final static int PALETTE_MEM_SIZE = 32;
     private final static int NAMETABLE_SIZE = 1024;
     private final static int OAM_SIZE = 256;
+    private final static int NUM_COLORS = 64;
 
-    private final static Color[] SYSTEM_PALETTE = new Color[] {
-        new Color(84, 84, 84),    new Color(0, 30, 116),    new Color(8, 16, 144),    new Color(48, 0, 136),
-        new Color(68, 0, 100),    new Color(92, 0, 48),     new Color(84, 4, 0),      new Color(60, 24, 0),
-        new Color(32, 42, 0),     new Color(8, 58, 0),      new Color(0, 64, 0),      new Color(0, 60, 0),
-        new Color(0, 50, 60),     new Color(0, 0, 0),       new Color(0, 0, 0),       new Color(0, 0, 0),
-        new Color(152, 150, 152), new Color(8, 76, 196),    new Color(48, 50, 236),   new Color(92, 30, 228),
-        new Color(136, 20, 176),  new Color(160, 20, 100),  new Color(152, 34, 32),   new Color(120, 60, 0),
-        new Color(84, 90, 0),     new Color(40, 114, 0),    new Color(8, 124, 0),     new Color(0, 118, 40),
-        new Color(0, 102, 120),   new Color(0, 0, 0),       new Color(0, 0, 0),       new Color(0, 0, 0),
-        new Color(236, 238, 236), new Color(76, 154, 236),  new Color(120, 124, 236), new Color(176, 98, 236),
-        new Color(228, 84, 236),  new Color(236, 88, 180),  new Color(236, 106, 100), new Color(212, 136, 32),
-        new Color(160, 170, 0),   new Color(116, 196, 0),   new Color(76, 208, 32),   new Color(56, 204, 108),
-        new Color(56, 180, 204),  new Color(60, 60, 60),    new Color(0, 0, 0),       new Color(0, 0, 0),
-        new Color(236, 238, 236), new Color(168, 204, 236), new Color(188, 188, 236), new Color(212, 178, 236),
-        new Color(236, 174, 236), new Color(236, 174, 212), new Color(236, 180, 176), new Color(228, 196, 144),
-        new Color(204, 210, 120), new Color(180, 222, 120), new Color(168, 226, 144), new Color(152, 226, 180),
-        new Color(160, 214, 228), new Color(160, 162, 160), new Color(0, 0, 0),       new Color(0, 0, 0)
-    };
+    private final static int[] SYSTEM_PALETTE =
+            readPaletteFromPalFile("/nesemu/resources/ntscpalette.pal");
 
     public Cartridge cartridge;
     private final byte paletteMemory[];
@@ -176,6 +164,21 @@ public class PPU extends MemoryMapped {
         }
     }
 
+    private static int[] readPaletteFromPalFile(String fileName) {
+        DataInputStream stream = new DataInputStream(PPU.class.getResourceAsStream(fileName));
+        final int[] colors = new int[NUM_COLORS * 8];
+        try {
+            for (int i = 0; i < colors.length; i++) {
+                byte rgb[] = stream.readNBytes(3);
+                colors[i] = 0xFF000000 | (Byte.toUnsignedInt(rgb[0]) << 16) |
+                        (Byte.toUnsignedInt(rgb[1]) << 8) | Byte.toUnsignedInt(rgb[2]);
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(PPU.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return colors;
+    }
+
     public void clockTick(BufferedImage img, CPU cpu) {
         if (scanline >= -1 && scanline < 240) {
             if (scanline == -1 && column == 1) {
@@ -275,7 +278,7 @@ public class PPU extends MemoryMapped {
         if (regPPUMASK.grayscale && (finalColorCode & 0xF) < 0xD)
             finalColorCode &= 0xF0;
         img.setRGB(column - 1, scanline,
-                SYSTEM_PALETTE[finalColorCode % SYSTEM_PALETTE.length].getRGB());
+                SYSTEM_PALETTE[finalColorCode % SYSTEM_PALETTE.length]);
     }
 
     private void shiftBackgroundShiftRegisters() {
