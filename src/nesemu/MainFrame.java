@@ -221,6 +221,7 @@ public class MainFrame extends javax.swing.JFrame {
         fileChooser.setFileFilter(filter);
         int result = fileChooser.showOpenDialog(null);
         if (result == JFileChooser.APPROVE_OPTION) {
+            String fileName = fileChooser.getSelectedFile().getName();
             String filePath = fileChooser.getSelectedFile().getAbsolutePath();
             try {
                 if (nes == null) {
@@ -233,16 +234,18 @@ public class MainFrame extends javax.swing.JFrame {
                     nesRunnerThread = new NESRunnerThread(this);
                     nesRunnerThread.start();
                 }
-                requestFocus();
             } catch (IOException ex) {
                 Logger.getLogger(this.getClass().getName())
                         .log(Level.SEVERE, null, ex);
             } catch (UnsupportedMapperException ex) {
-                String fileName = fileChooser.getSelectedFile().getName();
                 JOptionPane.showMessageDialog(null,
                         "The mapper associated to \"" + fileName + "\" (iNES mapper number " +
                         ex.getMapperNumber() + ") is not supported yet.",
                         "Unsupported mapper", JOptionPane.ERROR_MESSAGE);
+            } catch (IllegalArgumentException ex) {
+                JOptionPane.showMessageDialog(null, "\"" + fileName +
+                        "\" is not a valid cartridge file.", "Invalid cartridge file",
+                        JOptionPane.ERROR_MESSAGE);
             }
         }
     }//GEN-LAST:event_loadROMMenuItemActionPerformed
