@@ -72,7 +72,7 @@ public class PPU extends MemoryMapped {
         spriteAttributes = new byte[8];
         spriteXPositions = new byte[8];
         regPPUCTRL = new PPUCTRL(1, 0, 0, false, true, false);
-        regPPUMASK = new PPUMASK(false, false, false, false, false, false, false, false);
+        regPPUMASK = new PPUMASK(false, false, false, false, false, 0);
         regPPUSTATUS = new PPUSTATUS(false, false, false);
     }
 
@@ -111,21 +111,17 @@ public class PPU extends MemoryMapped {
         public boolean showSpritesLeft;
         public boolean showBackground;
         public boolean showSprites;
-        public boolean emphasizeRed;
-        public boolean emphasizeGreen;
-        public boolean emphasizeBlue;
+        public int emphasisBits;
 
         public PPUMASK(boolean grayscale, boolean showBackgroundLeft,
                 boolean showSpritesLeft, boolean showBackground, boolean showSprites,
-                boolean emphasizeRed, boolean emphasizeGreen, boolean emphasizeBlue) {
+                int emphasisBits) {
             this.grayscale = grayscale;
             this.showBackgroundLeft = showBackgroundLeft;
             this.showSpritesLeft = showSpritesLeft;
             this.showBackground = showBackground;
             this.showSprites = showSprites;
-            this.emphasizeRed = emphasizeRed;
-            this.emphasizeGreen = emphasizeGreen;
-            this.emphasizeBlue = emphasizeBlue;
+            this.emphasisBits = emphasisBits;
         }
 
         public void update(byte flags) {
@@ -134,9 +130,7 @@ public class PPU extends MemoryMapped {
             showSpritesLeft = (flags & 4) != 0;
             showBackground = (flags & 8) != 0;
             showSprites = (flags & 16) != 0;
-            emphasizeRed = (flags & 32) != 0;
-            emphasizeGreen = (flags & 64) != 0;
-            emphasizeBlue = (flags & 128) != 0;
+            emphasisBits = (flags & 0xE0) >>> 5;
         }
     }
 
@@ -274,11 +268,11 @@ public class PPU extends MemoryMapped {
                     spriteColorNumber != 0 && backgroundColorNumber != 0)
                 regPPUSTATUS.spriteZeroHit = true;
         }
-        // TODO: color tinting/emphasis using PPUMASK
         if (regPPUMASK.grayscale && (finalColorCode & 0xF) < 0xD)
             finalColorCode &= 0xF0;
-        img.setRGB(column - 1, scanline,
-                SYSTEM_PALETTE[finalColorCode % SYSTEM_PALETTE.length]);
+        int colorEmphasisOffset = regPPUMASK.emphasisBits * NUM_COLORS;
+        img.setRGB(column - 1, scanline, SYSTEM_PALETTE[colorEmphasisOffset +
+                finalColorCode % NUM_COLORS]);
     }
 
     private void shiftBackgroundShiftRegisters() {
