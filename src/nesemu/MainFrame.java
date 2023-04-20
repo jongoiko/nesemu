@@ -36,10 +36,8 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     class NESRunnerThread extends Thread {
-        private final MainFrame mf;
+        public NESRunnerThread() {
 
-        public NESRunnerThread(MainFrame mf) {
-            this.mf = mf;
         }
 
         @Override
@@ -50,12 +48,12 @@ public class MainFrame extends javax.swing.JFrame {
             nes.reset();
             while (!Thread.currentThread().isInterrupted()) {
                 long frameStartTime = System.nanoTime(), frameEndTime;
-                mf.nes.runUntilFrameReady(mf.panel.img);
+                nes.runUntilFrameReady(panel.img);
                 frames++;
-                mf.repaint();
+                repaint();
                 long timeEllapsedMilliseconds = System.currentTimeMillis() - startTime;
                 double fps = frames / ((double)timeEllapsedMilliseconds / 1000);
-                mf.fpsLabel.setText(df.format(fps));
+                fpsLabel.setText(df.format(fps));
                 do {
                     frameEndTime = System.nanoTime();
                 } while (frameEndTime - frameStartTime < NANOSECS_PER_FRAME);
@@ -225,13 +223,13 @@ public class MainFrame extends javax.swing.JFrame {
             String filePath = fileChooser.getSelectedFile().getAbsolutePath();
             try {
                 if (nes == null) {
-                    nesRunnerThread = new NESRunnerThread(this);
+                    nesRunnerThread = new NESRunnerThread();
                     nes = new NES(filePath);
                     nesRunnerThread.start();
                 } else {
                     nesRunnerThread.stopRunning();
                     nes.exchangeCartridge(filePath);
-                    nesRunnerThread = new NESRunnerThread(this);
+                    nesRunnerThread = new NESRunnerThread();
                     nesRunnerThread.start();
                 }
             } catch (IOException ex) {
