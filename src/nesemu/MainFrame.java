@@ -20,7 +20,6 @@ public class MainFrame extends javax.swing.JFrame {
     private NESRunnerThread nesRunnerThread;
 
     final ScreenPanel panel;
-    final javax.swing.JLabel fpsLabel;
 
     public MainFrame() {
         try {
@@ -30,7 +29,6 @@ public class MainFrame extends javax.swing.JFrame {
         }
         nes = null;
         panel = new ScreenPanel();
-        fpsLabel = new JLabel("");
         initComponents();
         panel.init();
     }
@@ -53,7 +51,7 @@ public class MainFrame extends javax.swing.JFrame {
                 repaint();
                 long timeEllapsedMilliseconds = System.currentTimeMillis() - startTime;
                 double fps = frames / ((double)timeEllapsedMilliseconds / 1000);
-                fpsLabel.setText(df.format(fps));
+                statusBarLabel.setText("FPS: " + df.format(fps));
                 do {
                     frameEndTime = System.nanoTime();
                 } while (frameEndTime - frameStartTime < NANOSECS_PER_FRAME);
@@ -77,8 +75,7 @@ public class MainFrame extends javax.swing.JFrame {
     private void initComponents() {
 
         jPanel1 = panel;
-        jLabel1 = new javax.swing.JLabel();
-        jLabel2 = fpsLabel;
+        statusBarLabel = new javax.swing.JLabel();
         menuBar = new javax.swing.JMenuBar();
         jMenu3 = new javax.swing.JMenu();
         loadROMMenuItem = new javax.swing.JMenuItem();
@@ -111,8 +108,8 @@ public class MainFrame extends javax.swing.JFrame {
             .addGap(0, 480, Short.MAX_VALUE)
         );
 
-        jLabel1.setFont(new java.awt.Font("Fira Code Medium", 0, 13)); // NOI18N
-        jLabel1.setText("FPS:");
+        statusBarLabel.setFont(new java.awt.Font("Fira Code", 0, 13)); // NOI18N
+        statusBarLabel.setText("Load a ROM to play with System -> Load ROM.");
 
         menuBar.setFont(new java.awt.Font("Fira Code Medium", 0, 13)); // NOI18N
 
@@ -163,10 +160,7 @@ public class MainFrame extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel1)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jLabel2)))
+                    .addComponent(statusBarLabel))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -175,9 +169,7 @@ public class MainFrame extends javax.swing.JFrame {
                 .addContainerGap()
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel1)
-                    .addComponent(jLabel2))
+                .addComponent(statusBarLabel)
                 .addContainerGap())
         );
 
@@ -254,7 +246,6 @@ public class MainFrame extends javax.swing.JFrame {
         mf.setVisible(true);
 
         mf.getContentPane().setBackground(new Color(60, 63, 65));
-        mf.fpsLabel.setFont(new java.awt.Font("Fira Code Medium", 0, 13));
 
         mf.toFront();
         mf.requestFocus();
@@ -262,8 +253,6 @@ public class MainFrame extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem exitMenuItem;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu3;
     private javax.swing.JMenu jMenu4;
