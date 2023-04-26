@@ -1,8 +1,6 @@
 package nesemu;
 
 import java.io.IOException;
-import java.text.DecimalFormat;
-import javax.swing.JLabel;
 import javax.swing.UIManager;
 import com.formdev.flatlaf.FlatDarkLaf;
 import java.awt.Color;
@@ -40,18 +38,12 @@ public class MainFrame extends javax.swing.JFrame {
 
         @Override
         public void run() {
-            long frames = 0;
-            long startTime = System.currentTimeMillis();
-            final DecimalFormat df = new DecimalFormat("0.00");
             nes.reset();
+            statusBarLabel.setText("");
             while (!Thread.currentThread().isInterrupted()) {
                 long frameStartTime = System.nanoTime(), frameEndTime;
                 nes.runUntilFrameReady(panel.img);
-                frames++;
                 repaint();
-                long timeEllapsedMilliseconds = System.currentTimeMillis() - startTime;
-                double fps = frames / ((double)timeEllapsedMilliseconds / 1000);
-                statusBarLabel.setText("FPS: " + df.format(fps));
                 do {
                     frameEndTime = System.nanoTime();
                 } while (frameEndTime - frameStartTime < NANOSECS_PER_FRAME);
