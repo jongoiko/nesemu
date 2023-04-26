@@ -566,9 +566,6 @@ public class PPU extends MemoryMapped {
             writeByteToNametableMemory(address & 0xFFF, value);
         else if (address >= 0x3F00)
             writeByteToPaletteMemory(address & 0x1F, value);
-        else
-            throw new UnsupportedOperationException("Unsupported PPUADDR address " +
-                    String.format("%04X", address));
     }
 
     @Override
@@ -593,9 +590,8 @@ public class PPU extends MemoryMapped {
                 vramAddress += regPPUCTRL.nametableAddressIncrement;
                 return value;
             }
-            default -> throw new UnsupportedOperationException("Unsupported PPU register 0x" +
-                    String.format("%04X", address));
         }
+        return 0;
     }
 
     @Override
@@ -639,8 +635,6 @@ public class PPU extends MemoryMapped {
                 writeByteAtVramAddress(value);
                 vramAddress += regPPUCTRL.nametableAddressIncrement;
             }
-            default -> throw new UnsupportedOperationException("Unsupported PPU register 0x" +
-                    String.format("%04X", address));
         }
     }
 }
