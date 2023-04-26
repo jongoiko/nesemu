@@ -33,7 +33,7 @@ public class MainFrame extends javax.swing.JFrame {
         panel.init();
     }
 
-    class NESRunnerThread extends Thread {
+    private class NESRunnerThread extends Thread {
         public NESRunnerThread() {
 
         }
