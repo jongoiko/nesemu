@@ -4,6 +4,8 @@ import java.io.IOException;
 import javax.swing.UIManager;
 import com.formdev.flatlaf.FlatDarkLaf;
 import java.awt.Color;
+import java.net.ServerSocket;
+import java.net.Socket;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -14,8 +16,11 @@ import java.util.logging.Level;
 public class MainFrame extends javax.swing.JFrame {
     private static final int TARGET_FPS = 60;
     private static final int NANOSECS_PER_FRAME = (int)((1.0 / TARGET_FPS) * 1000000000);
+    private static final int NETPLAY_PORT = 6502;
+
     private NES nes;
     private NESRunnerThread nesRunnerThread;
+    private NetplayServerThread netplayServerThread;
 
     final ScreenPanel panel;
 
@@ -62,6 +67,31 @@ public class MainFrame extends javax.swing.JFrame {
         }
     }
 
+    private class NetplayServerThread extends Thread {
+        public NetplayServerThread() {
+
+        }
+
+        @Override
+        public void run() {
+            statusBarLabel.setText("Netplay server started; waiting for connections");
+            final ServerSocket serverSocket;
+            try {
+                serverSocket = new ServerSocket(NETPLAY_PORT);
+                try (Socket clientSocket = serverSocket.accept()) {
+                    statusBarLabel.setText("Accepted connection from "
+                        + clientSocket.getInetAddress() + ":" + clientSocket.getPort());
+                } catch (IOException ex) {
+
+                }
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(null, "Could not start netplay server " +
+                        "(" + ex.getLocalizedMessage() + ").", "Netplay server error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -75,6 +105,11 @@ public class MainFrame extends javax.swing.JFrame {
         exitMenuItem = new javax.swing.JMenuItem();
         jMenu4 = new javax.swing.JMenu();
         jMenu1 = new javax.swing.JMenu();
+        jMenu2 = new javax.swing.JMenu();
+        jMenu5 = new javax.swing.JMenu();
+        startServerMenuItem = new javax.swing.JMenuItem();
+        stopServerMenuItem = new javax.swing.JMenuItem();
+        connectToServerMenuItem = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setAutoRequestFocus(false);
@@ -141,6 +176,42 @@ public class MainFrame extends javax.swing.JFrame {
 
         jMenu1.setText("Help");
         menuBar.add(jMenu1);
+
+        jMenu2.setText("Netplay");
+
+        jMenu5.setText("Local server");
+        jMenu5.setFont(new java.awt.Font("Fira Code", 0, 13)); // NOI18N
+
+        startServerMenuItem.setFont(new java.awt.Font("Fira Code", 0, 13)); // NOI18N
+        startServerMenuItem.setText("Start");
+        startServerMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                startServerMenuItemActionPerformed(evt);
+            }
+        });
+        jMenu5.add(startServerMenuItem);
+
+        stopServerMenuItem.setFont(new java.awt.Font("Fira Code", 0, 13)); // NOI18N
+        stopServerMenuItem.setText("Stop");
+        stopServerMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                stopServerMenuItemActionPerformed(evt);
+            }
+        });
+        jMenu5.add(stopServerMenuItem);
+
+        jMenu2.add(jMenu5);
+
+        connectToServerMenuItem.setFont(new java.awt.Font("Fira Code", 0, 13)); // NOI18N
+        connectToServerMenuItem.setText("Connect to server");
+        connectToServerMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                connectToServerMenuItemActionPerformed(evt);
+            }
+        });
+        jMenu2.add(connectToServerMenuItem);
+
+        menuBar.add(jMenu2);
 
         setJMenuBar(menuBar);
 
@@ -232,6 +303,36 @@ public class MainFrame extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_loadROMMenuItemActionPerformed
 
+    private void startServerMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startServerMenuItemActionPerformed
+        netplayServerThread = new NetplayServerThread();
+        netplayServerThread.start();
+    }//GEN-LAST:event_startServerMenuItemActionPerformed
+
+    private void stopServerMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_stopServerMenuItemActionPerformed
+        if (netplayServerThread != null && netplayServerThread.isAlive()) {
+            netplayServerThread.interrupt();
+            statusBarLabel.setText("Netplay server stopped");
+        }
+    }//GEN-LAST:event_stopServerMenuItemActionPerformed
+
+    private void connectToServerMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectToServerMenuItemActionPerformed
+        String host = (String)JOptionPane.showInputDialog(null,
+                "Input the server's hostname or IP address:",
+                "Netplay server address", JOptionPane.QUESTION_MESSAGE,
+                null, null, "localhost");
+        if (host == null)
+            return;
+        if (netplayServerThread != null && netplayServerThread.isAlive())
+            netplayServerThread.interrupt();
+        try (final Socket socket = new Socket(host, NETPLAY_PORT)) {
+            statusBarLabel.setText("Successfully connected to server");
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(null, "Could not connect to server " +
+                    "(" + ex.getLocalizedMessage() + ").", "Connection error",
+                        JOptionPane.ERROR_MESSAGE);
+        }
+    }//GEN-LAST:event_connectToServerMenuItemActionPerformed
+
     public static void main(String args[]) throws IOException {
         MainFrame mf = new MainFrame();
         mf.setLocationRelativeTo(null);
@@ -244,13 +345,19 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JMenuItem connectToServerMenuItem;
     private javax.swing.JMenuItem exitMenuItem;
     private javax.swing.JMenu jMenu1;
+    private javax.swing.JMenu jMenu2;
     private javax.swing.JMenu jMenu3;
     private javax.swing.JMenu jMenu4;
+    private javax.swing.JMenu jMenu5;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JMenuItem loadROMMenuItem;
     private javax.swing.JMenuBar menuBar;
     private javax.swing.JMenuItem resetMenuItem;
+    private javax.swing.JMenuItem startServerMenuItem;
+    private javax.swing.JLabel statusBarLabel;
+    private javax.swing.JMenuItem stopServerMenuItem;
     // End of variables declaration//GEN-END:variables
 }
