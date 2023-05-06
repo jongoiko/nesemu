@@ -50,7 +50,6 @@ public class MainFrame extends javax.swing.JFrame {
         public void run() {
             if (netplaySocket == null || isNetplayServer)
                 nes.reset();
-            statusBarLabel.setText("");
             while (!Thread.currentThread().isInterrupted()) {
                 if (shouldPerformNetplaySync.compareAndSet(true, false))
                     performInitialNetplaySync();
@@ -318,6 +317,7 @@ public class MainFrame extends javax.swing.JFrame {
                     nesRunnerThread = new NESRunnerThread();
                     nesRunnerThread.start();
                 }
+                statusBarLabel.setText("");
             } catch (IOException ex) {
                 Logger.getLogger(this.getClass().getName())
                         .log(Level.SEVERE, null, ex);
