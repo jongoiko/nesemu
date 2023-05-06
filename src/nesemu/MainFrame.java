@@ -375,6 +375,8 @@ public class MainFrame extends javax.swing.JFrame {
         try {
             netplaySocket = new Socket(host, NETPLAY_PORT);
             statusBarLabel.setText("Successfully connected to server");
+            loadROMMenuItem.setEnabled(false);
+            resetMenuItem.setEnabled(false);
             isNetplayServer = false;
             if (nes != null)
                 nesRunnerThread.stopRunning();
@@ -393,6 +395,8 @@ public class MainFrame extends javax.swing.JFrame {
             try {
                 netplaySocket.close();
                 statusBarLabel.setText("Disconnected from server");
+                loadROMMenuItem.setEnabled(true);
+                resetMenuItem.setEnabled(true);
             } catch (IOException ex) {
                 Logger.getLogger(MainFrame.class.getName())
                         .log(Level.SEVERE, null, ex);
