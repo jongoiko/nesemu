@@ -140,6 +140,7 @@ public class MainFrame extends javax.swing.JFrame {
         startServerMenuItem = new javax.swing.JMenuItem();
         stopServerMenuItem = new javax.swing.JMenuItem();
         connectToServerMenuItem = new javax.swing.JMenuItem();
+        disconnectFromServerMenuItem = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setAutoRequestFocus(false);
@@ -240,6 +241,15 @@ public class MainFrame extends javax.swing.JFrame {
             }
         });
         jMenu2.add(connectToServerMenuItem);
+
+        disconnectFromServerMenuItem.setFont(new java.awt.Font("Fira Code", 0, 13)); // NOI18N
+        disconnectFromServerMenuItem.setText("Disconnect from server");
+        disconnectFromServerMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                disconnectFromServerMenuItemActionPerformed(evt);
+            }
+        });
+        jMenu2.add(disconnectFromServerMenuItem);
 
         menuBar.add(jMenu2);
 
@@ -378,6 +388,18 @@ public class MainFrame extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_connectToServerMenuItemActionPerformed
 
+    private void disconnectFromServerMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_disconnectFromServerMenuItemActionPerformed
+        if (netplaySocket != null && !isNetplayServer) {
+            try {
+                netplaySocket.close();
+                statusBarLabel.setText("Disconnected from server");
+            } catch (IOException ex) {
+                Logger.getLogger(MainFrame.class.getName())
+                        .log(Level.SEVERE, null, ex);
+            }
+        }
+    }//GEN-LAST:event_disconnectFromServerMenuItemActionPerformed
+
     public static void main(String args[]) throws IOException {
         MainFrame mf = new MainFrame();
         mf.setLocationRelativeTo(null);
@@ -391,6 +413,7 @@ public class MainFrame extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem connectToServerMenuItem;
+    private javax.swing.JMenuItem disconnectFromServerMenuItem;
     private javax.swing.JMenuItem exitMenuItem;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
