@@ -4,8 +4,11 @@ import java.io.IOException;
 import javax.swing.UIManager;
 import com.formdev.flatlaf.FlatDarkLaf;
 import java.awt.Color;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -20,6 +23,9 @@ public class MainFrame extends javax.swing.JFrame {
 
     private NES nes;
     private NESRunnerThread nesRunnerThread;
+
+    private Socket netplaySocket;
+    private boolean isNetplayServer;
     private NetplayServerThread netplayServerThread;
 
     final ScreenPanel panel;
@@ -37,15 +43,17 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     private class NESRunnerThread extends Thread {
-        public NESRunnerThread() {
-
-        }
+        private static final AtomicBoolean shouldPerformNetplaySync =
+                new AtomicBoolean(false);
 
         @Override
         public void run() {
-            nes.reset();
+            if (netplaySocket == null || isNetplayServer)
+                nes.reset();
             statusBarLabel.setText("");
             while (!Thread.currentThread().isInterrupted()) {
+                if (shouldPerformNetplaySync.compareAndSet(true, false))
+                    performInitialNetplaySync();
                 long frameStartTime = System.nanoTime(), frameEndTime;
                 nes.runUntilFrameReady(panel.img);
                 repaint();
@@ -53,6 +61,33 @@ public class MainFrame extends javax.swing.JFrame {
                     frameEndTime = System.nanoTime();
                 } while (frameEndTime - frameStartTime < NANOSECS_PER_FRAME);
             }
+        }
+
+        private void performInitialNetplaySync() {
+            try {
+                if (isNetplayServer) {
+                    netplaySocket.getOutputStream().write(10);
+                    (new ObjectOutputStream(netplaySocket.getOutputStream()))
+                            .writeObject(nes);
+                    while (netplaySocket.getInputStream().read() == -1) {
+
+                    }
+                } else {
+                    while (netplaySocket.getInputStream().read() == -1) {
+
+                    }
+                    nes = (NES)(new ObjectInputStream(netplaySocket.getInputStream()))
+                            .readObject();
+                    netplaySocket.getOutputStream().write(10);
+                }
+            } catch (IOException | ClassNotFoundException ex) {
+                Logger.getLogger(this.getClass().getName())
+                        .log(Level.SEVERE, null, ex);
+            }
+        }
+
+        public static void requestInitialNetplaySync() {
+            shouldPerformNetplaySync.set(true);
         }
 
         public void stopRunning() {
@@ -68,22 +103,18 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     private class NetplayServerThread extends Thread {
-        public NetplayServerThread() {
-
-        }
-
         @Override
         public void run() {
             statusBarLabel.setText("Netplay server started; waiting for connections");
             final ServerSocket serverSocket;
             try {
                 serverSocket = new ServerSocket(NETPLAY_PORT);
-                try (Socket clientSocket = serverSocket.accept()) {
-                    statusBarLabel.setText("Accepted connection from "
-                        + clientSocket.getInetAddress() + ":" + clientSocket.getPort());
-                } catch (IOException ex) {
-
-                }
+                Socket clientSocket = serverSocket.accept();
+                statusBarLabel.setText("Accepted connection from "
+                    + clientSocket.getInetAddress() + ":" + clientSocket.getPort());
+                netplaySocket = clientSocket;
+                isNetplayServer = true;
+                NESRunnerThread.requestInitialNetplaySync();
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(null, "Could not start netplay server " +
                         "(" + ex.getLocalizedMessage() + ").", "Netplay server error",
@@ -312,7 +343,14 @@ public class MainFrame extends javax.swing.JFrame {
         if (netplayServerThread != null && netplayServerThread.isAlive()) {
             netplayServerThread.interrupt();
             statusBarLabel.setText("Netplay server stopped");
+            try {
+                netplaySocket.close();
+            } catch (IOException ex) {
+                Logger.getLogger(MainFrame.class.getName())
+                        .log(Level.SEVERE, null, ex);
+            }
         }
+        netplaySocket = null;
     }//GEN-LAST:event_stopServerMenuItemActionPerformed
 
     private void connectToServerMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectToServerMenuItemActionPerformed
@@ -324,8 +362,15 @@ public class MainFrame extends javax.swing.JFrame {
             return;
         if (netplayServerThread != null && netplayServerThread.isAlive())
             netplayServerThread.interrupt();
-        try (final Socket socket = new Socket(host, NETPLAY_PORT)) {
+        try {
+            netplaySocket = new Socket(host, NETPLAY_PORT);
             statusBarLabel.setText("Successfully connected to server");
+            isNetplayServer = false;
+            if (nes != null)
+                nesRunnerThread.stopRunning();
+            NESRunnerThread.requestInitialNetplaySync();
+            nesRunnerThread = new NESRunnerThread();
+            nesRunnerThread.start();
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(null, "Could not connect to server " +
                     "(" + ex.getLocalizedMessage() + ").", "Connection error",

@@ -1,5 +1,7 @@
 package nesemu;
 
+import java.io.Serializable;
+
 public class CPU extends MemoryMapped {
     private byte regA;
     private byte regY;
@@ -216,14 +218,18 @@ public class CPU extends MemoryMapped {
         return address;
     }
 
-    private class Instruction {
+    private class Instruction implements Serializable {
         final String name;
         final AddressingMode addressingMode;
         final int cycles;
-        final Runnable operation;
+        final SerializableRunnable operation;
+
+        interface SerializableRunnable extends Serializable, Runnable {
+
+        }
 
         public Instruction(String name, AddressingMode addressingMode,
-                int cycles, Runnable operation) {
+                int cycles, SerializableRunnable operation) {
             this.name = name;
             this.addressingMode = addressingMode;
             this.cycles = cycles;

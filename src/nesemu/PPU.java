@@ -3,6 +3,7 @@ package nesemu;
 import java.awt.image.BufferedImage;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -76,7 +77,7 @@ public class PPU extends MemoryMapped {
         regPPUSTATUS = new PPUSTATUS(false, false, false);
     }
 
-    private class PPUCTRL {
+    private class PPUCTRL implements Serializable {
         public int nametableAddressIncrement;       // 1 or 32
         public int spritePatternTableAddress;       // 0 or 1
         public int backgroundPatternTableAddress;   // 0 or 1
@@ -105,7 +106,7 @@ public class PPU extends MemoryMapped {
         }
     }
 
-    private class PPUMASK {
+    private class PPUMASK implements Serializable {
         public boolean grayscale;
         public boolean showBackgroundLeft;
         public boolean showSpritesLeft;
@@ -134,7 +135,7 @@ public class PPU extends MemoryMapped {
         }
     }
 
-    private class PPUSTATUS {
+    private class PPUSTATUS implements Serializable {
         public boolean spriteOverflow;
         public boolean spriteZeroHit;
         public boolean verticalBlank;

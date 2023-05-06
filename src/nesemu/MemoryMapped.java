@@ -1,6 +1,8 @@
 package nesemu;
 
-public abstract class MemoryMapped {
+import java.io.Serializable;
+
+public abstract class MemoryMapped implements Serializable {
     AddressSpace addressSpace;
 
     abstract boolean addressIsMapped(short address);

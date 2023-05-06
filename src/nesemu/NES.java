@@ -2,8 +2,9 @@ package nesemu;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.Serializable;
 
-public class NES {
+public class NES implements Serializable {
     private final AddressSpace addressSpace;
     private final CPU cpu;
     private final PPU ppu;
