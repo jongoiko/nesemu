@@ -86,23 +86,21 @@ public class Controller extends MemoryMapped {
         }
     }
 
-    public void keyPressed(KeyEvent ke, boolean isPlayerOne) {
-        Button button = Button.fromKeyCode(ke.getKeyCode());
-        if (button != null) {
-            if (isPlayerOne)
-                button.isPressedByPlayerOne = true;
-            else
-                button.isPressedByPlayerTwo = true;
-        }
+    public void buttonPress(Button button, boolean isPlayerOne) {
+        if (isPlayerOne)
+            button.isPressedByPlayerOne = true;
+        else
+            button.isPressedByPlayerTwo = true;
     }
 
-    public void keyReleased(KeyEvent ke, boolean isPlayerOne) {
-        Button button = Button.fromKeyCode(ke.getKeyCode());
-        if (button != null) {
-            if (isPlayerOne)
-                button.isPressedByPlayerOne = false;
-            else
-                button.isPressedByPlayerTwo = false;
-        }
+    public void buttonRelease(Button button, boolean isPlayerOne) {
+        if (isPlayerOne)
+            button.isPressedByPlayerOne = false;
+        else
+            button.isPressedByPlayerTwo = false;
+    }
+
+    public void handleNetplayButtonPress(String line, boolean isPlayerOne) {
+
     }
 }
