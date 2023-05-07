@@ -82,7 +82,7 @@ public class MainFrame extends javax.swing.JFrame {
                     nes.runUntilFrameReady(panel.img);
                     netplaySocket.getOutputStream().write(10);
                 }
-                (new NetplayKeyEventListenerThread()).start();
+                (new NetplayButtonEventListenerThread()).start();
             } catch (IOException | ClassNotFoundException ex) {
                 Logger.getLogger(this.getClass().getName())
                         .log(Level.SEVERE, null, ex);
@@ -105,7 +105,7 @@ public class MainFrame extends javax.swing.JFrame {
         }
     }
 
-    private class NetplayKeyEventListenerThread extends Thread {
+    private class NetplayButtonEventListenerThread extends Thread {
         @Override
         public void run() {
             try {
