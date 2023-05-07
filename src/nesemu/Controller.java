@@ -101,6 +101,12 @@ public class Controller extends MemoryMapped {
     }
 
     public void handleNetplayButtonPress(String line, boolean isPlayerOne) {
-
+        final String[] strings = line.split(" ");
+        final Button button = Button.valueOf(strings[0]);
+        final boolean pressed = strings[1].equals("PRESSED");
+        if (pressed)
+            buttonPress(button, !isPlayerOne);
+        else
+            buttonRelease(button, !isPlayerOne);
     }
 }
