@@ -23,6 +23,14 @@ public class Controller extends MemoryMapped {
             this.isPressed = pressed;
             this.bit = bit;
         }
+
+        public static Button fromKeyCode(int keyCode) {
+            for (Button button : Button.values()) {
+                if (keyCode == button.keyCode)
+                    return button;
+            }
+            return null;
+        }
     }
 
     private boolean poll;
@@ -66,21 +74,14 @@ public class Controller extends MemoryMapped {
     }
 
     public void keyPressed(KeyEvent ke) {
-        int keyCode = ke.getKeyCode();
-        for (Button button : Button.values())
-            if (keyCode == button.keyCode) {
-                button.isPressed = true;
-                return;
-            }
+        Button button = Button.fromKeyCode(ke.getKeyCode());
+        if (button != null)
+            button.isPressed = true;
     }
 
     public void keyReleased(KeyEvent ke) {
-        int keyCode = ke.getKeyCode();
-        for (Button button : Button.values()) {
-            if (keyCode == button.keyCode) {
-                button.isPressed = false;
-                return;
-            }
-        }
+        Button button = Button.fromKeyCode(ke.getKeyCode());
+        if (button != null)
+            button.isPressed = false;
     }
 }
