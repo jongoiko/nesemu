@@ -300,46 +300,35 @@ public class MainFrame extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void formKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_formKeyPressed
-        if (nes == null)
-            return;
-        nes.controller.keyPressed(evt, netplaySocket == null || isNetplayServer);
-        if (netplaySocket == null)
-            return;
+    private void netplaySendButtonPress(int keyCode, boolean isPressed) {
         try {
             DataOutputStream out =
                     new DataOutputStream(netplaySocket.getOutputStream());
             Controller.Button button;
-            if ((button = Controller.Button
-                    .fromKeyCode(evt.getKeyCode())) != null) {
-                out.writeUTF(button.name() + " PRESSED");
+            if ((button = Controller.Button.fromKeyCode(keyCode)) != null) {
+                out.writeUTF(button.name() + (isPressed ? " PRESSED" : " RELEASED"));
                 out.flush();
             }
         } catch (IOException ex) {
             Logger.getLogger(MainFrame.class.getName())
                     .log(Level.SEVERE, null, ex);
         }
+    }
+
+    private void formKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_formKeyPressed
+        if (nes == null)
+            return;
+        nes.controller.keyPressed(evt, netplaySocket == null || isNetplayServer);
+        if (netplaySocket != null)
+            netplaySendButtonPress(evt.getKeyCode(), true);
     }//GEN-LAST:event_formKeyPressed
 
     private void formKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_formKeyReleased
         if (nes == null)
             return;
         nes.controller.keyReleased(evt, netplaySocket == null || isNetplayServer);
-        if (netplaySocket == null)
-            return;
-        try {
-            DataOutputStream out =
-                    new DataOutputStream(netplaySocket.getOutputStream());
-            Controller.Button button;
-            if ((button = Controller.Button
-                    .fromKeyCode(evt.getKeyCode())) != null) {
-                out.writeUTF(button.name() + " RELEASED");
-                out.flush();
-            }
-        } catch (IOException ex) {
-            Logger.getLogger(MainFrame.class.getName())
-                    .log(Level.SEVERE, null, ex);
-        }
+        if (netplaySocket != null)
+            netplaySendButtonPress(evt.getKeyCode(), false);
     }//GEN-LAST:event_formKeyReleased
 
     private void resetMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_resetMenuItemActionPerformed
