@@ -4,23 +4,25 @@ import java.awt.event.KeyEvent;
 
 public class Controller extends MemoryMapped {
 
-    private enum Button {
-        BUTTON_A(KeyEvent.VK_X, false, (byte)1),
-        BUTTON_B(KeyEvent.VK_Z, false, (byte)(1 << 1)),
-        BUTTON_SELECT(KeyEvent.VK_SHIFT, false, (byte)(1 << 2)),
-        BUTTON_START(KeyEvent.VK_ENTER, false, (byte)(1 << 3)),
-        BUTTON_UP(KeyEvent.VK_UP, false, (byte)(1 << 4)),
-        BUTTON_DOWN(KeyEvent.VK_DOWN, false, (byte)(1 << 5)),
-        BUTTON_LEFT(KeyEvent.VK_LEFT, false, (byte)(1 << 6)),
-        BUTTON_RIGHT(KeyEvent.VK_RIGHT, false, (byte)(1 << 7));
+    public enum Button {
+        BUTTON_A(KeyEvent.VK_X, (byte)1),
+        BUTTON_B(KeyEvent.VK_Z, (byte)(1 << 1)),
+        BUTTON_SELECT(KeyEvent.VK_SHIFT, (byte)(1 << 2)),
+        BUTTON_START(KeyEvent.VK_ENTER, (byte)(1 << 3)),
+        BUTTON_UP(KeyEvent.VK_UP, (byte)(1 << 4)),
+        BUTTON_DOWN(KeyEvent.VK_DOWN, (byte)(1 << 5)),
+        BUTTON_LEFT(KeyEvent.VK_LEFT, (byte)(1 << 6)),
+        BUTTON_RIGHT(KeyEvent.VK_RIGHT, (byte)(1 << 7));
 
         public int keyCode;
-        public boolean isPressed;
+        public boolean isPressedByPlayerOne;
+        public boolean isPressedByPlayerTwo;
         public byte bit;
 
-        private Button(int keyCode, boolean pressed, byte bit) {
+        private Button(int keyCode, byte bit) {
             this.keyCode = keyCode;
-            this.isPressed = pressed;
+            this.isPressedByPlayerOne = false;
+            this.isPressedByPlayerTwo = false;
             this.bit = bit;
         }
 
@@ -34,17 +36,24 @@ public class Controller extends MemoryMapped {
     }
 
     private boolean poll;
-    private byte buffer;
+    private byte playerOneBuffer;
+    private byte playerTwoBuffer;
 
     public Controller() {
-
+        poll = false;
+        playerOneBuffer = 0;
+        playerTwoBuffer = 0;
     }
 
-    private void getKeyByte() {
-        buffer = 0;
-        for (Button button : Button.values())
-            if (button.isPressed)
-                buffer |= button.bit;
+    private void getKeyBytes() {
+        playerOneBuffer = 0;
+        playerTwoBuffer = 0;
+        for (Button button : Button.values()) {
+            if (button.isPressedByPlayerOne)
+                playerOneBuffer |= button.bit;
+            if (button.isPressedByPlayerTwo)
+                playerTwoBuffer |= button.bit;
+        }
     }
 
     @Override
@@ -54,13 +63,17 @@ public class Controller extends MemoryMapped {
 
     @Override
     byte readByteFromDevice(short address) {
+        int bit;
         if (address == 0x4016) {
-            int bit = buffer & 1;
-            buffer >>>= 1;
-            buffer |= 0x80;
-            return (byte)(bit | 0x40);
+            bit = playerOneBuffer & 1;
+            playerOneBuffer >>>= 1;
+            playerOneBuffer |= 0x80;
+        } else {
+            bit = playerTwoBuffer & 1;
+            playerTwoBuffer >>>= 1;
+            playerTwoBuffer |= 0x80;
         }
-        return 0x40;
+        return (byte)(bit | 0x40);
     }
 
     @Override
@@ -69,19 +82,27 @@ public class Controller extends MemoryMapped {
         if (address == 0x4016) {
             poll = (value & 1) != 0;
             if (prevPoll && !poll)
-                getKeyByte();
+                getKeyBytes();
         }
     }
 
-    public void keyPressed(KeyEvent ke) {
+    public void keyPressed(KeyEvent ke, boolean isPlayerOne) {
         Button button = Button.fromKeyCode(ke.getKeyCode());
-        if (button != null)
-            button.isPressed = true;
+        if (button != null) {
+            if (isPlayerOne)
+                button.isPressedByPlayerOne = true;
+            else
+                button.isPressedByPlayerTwo = true;
+        }
     }
 
-    public void keyReleased(KeyEvent ke) {
+    public void keyReleased(KeyEvent ke, boolean isPlayerOne) {
         Button button = Button.fromKeyCode(ke.getKeyCode());
-        if (button != null)
-            button.isPressed = false;
+        if (button != null) {
+            if (isPlayerOne)
+                button.isPressedByPlayerOne = false;
+            else
+                button.isPressedByPlayerTwo = false;
+        }
     }
 }

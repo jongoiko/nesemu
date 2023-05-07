@@ -4,6 +4,8 @@ import java.io.IOException;
 import javax.swing.UIManager;
 import com.formdev.flatlaf.FlatDarkLaf;
 import java.awt.Color;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
@@ -80,6 +82,7 @@ public class MainFrame extends javax.swing.JFrame {
                     nes.runUntilFrameReady(panel.img);
                     netplaySocket.getOutputStream().write(10);
                 }
+                (new NetplayKeyEventListenerThread()).start();
             } catch (IOException | ClassNotFoundException ex) {
                 Logger.getLogger(this.getClass().getName())
                         .log(Level.SEVERE, null, ex);
@@ -98,6 +101,23 @@ public class MainFrame extends javax.swing.JFrame {
                 } catch (InterruptedException ex) {
 
                 }
+            }
+        }
+    }
+
+    private class NetplayKeyEventListenerThread extends Thread {
+        @Override
+        public void run() {
+            try {
+                final DataInputStream in =
+                        new DataInputStream(netplaySocket.getInputStream());
+                String line;
+                while ((line = in.readUTF()) != null) {
+                    System.out.println(line);
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(MainFrame.class.getName())
+                        .log(Level.SEVERE, null, ex);
             }
         }
     }
@@ -281,13 +301,45 @@ public class MainFrame extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void formKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_formKeyPressed
-        if (nes != null)
-            nes.controller.keyPressed(evt);
+        if (nes != null) {
+            nes.controller.keyPressed(evt, netplaySocket == null || isNetplayServer);
+            if (netplaySocket != null) {
+                try {
+                    DataOutputStream out =
+                            new DataOutputStream(netplaySocket.getOutputStream());
+                    Controller.Button button;
+                    if ((button = Controller.Button
+                            .fromKeyCode(evt.getKeyCode())) != null) {
+                        out.writeUTF(button.name() + " PRESSED");
+                        out.flush();
+                    }
+                } catch (IOException ex) {
+                    Logger.getLogger(MainFrame.class.getName())
+                            .log(Level.SEVERE, null, ex);
+                }
+            }
+        }
     }//GEN-LAST:event_formKeyPressed
 
     private void formKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_formKeyReleased
-        if (nes != null)
-            nes.controller.keyReleased(evt);
+        if (nes != null) {
+            nes.controller.keyReleased(evt, netplaySocket == null || isNetplayServer);
+            if (netplaySocket != null) {
+                try {
+                    DataOutputStream out =
+                            new DataOutputStream(netplaySocket.getOutputStream());
+                    Controller.Button button;
+                    if ((button = Controller.Button
+                            .fromKeyCode(evt.getKeyCode())) != null) {
+                        out.writeUTF(button.name() + " RELEASED");
+                        out.flush();
+                    }
+                } catch (IOException ex) {
+                    Logger.getLogger(MainFrame.class.getName())
+                            .log(Level.SEVERE, null, ex);
+                }
+            }
+        }
     }//GEN-LAST:event_formKeyReleased
 
     private void resetMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_resetMenuItemActionPerformed
