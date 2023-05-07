@@ -15,7 +15,7 @@ public class PPU extends MemoryMapped {
     private final static int NUM_COLORS = 64;
 
     private final static int[] SYSTEM_PALETTE =
-            readPaletteFromPalFile("/nesemu/resources/ntscpalette.pal");
+            readPaletteFromPalFile("/resources/ntscpalette.pal");
 
     public Cartridge cartridge;
     private final byte paletteMemory[];
