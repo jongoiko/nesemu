@@ -301,63 +301,63 @@ public class MainFrame extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void formKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_formKeyPressed
-        if (nes != null) {
-            nes.controller.keyPressed(evt, netplaySocket == null || isNetplayServer);
-            if (netplaySocket != null) {
-                try {
-                    DataOutputStream out =
-                            new DataOutputStream(netplaySocket.getOutputStream());
-                    Controller.Button button;
-                    if ((button = Controller.Button
-                            .fromKeyCode(evt.getKeyCode())) != null) {
-                        out.writeUTF(button.name() + " PRESSED");
-                        out.flush();
-                    }
-                } catch (IOException ex) {
-                    Logger.getLogger(MainFrame.class.getName())
-                            .log(Level.SEVERE, null, ex);
-                }
+        if (nes == null)
+            return;
+        nes.controller.keyPressed(evt, netplaySocket == null || isNetplayServer);
+        if (netplaySocket == null)
+            return;
+        try {
+            DataOutputStream out =
+                    new DataOutputStream(netplaySocket.getOutputStream());
+            Controller.Button button;
+            if ((button = Controller.Button
+                    .fromKeyCode(evt.getKeyCode())) != null) {
+                out.writeUTF(button.name() + " PRESSED");
+                out.flush();
             }
+        } catch (IOException ex) {
+            Logger.getLogger(MainFrame.class.getName())
+                    .log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_formKeyPressed
 
     private void formKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_formKeyReleased
-        if (nes != null) {
-            nes.controller.keyReleased(evt, netplaySocket == null || isNetplayServer);
-            if (netplaySocket != null) {
-                try {
-                    DataOutputStream out =
-                            new DataOutputStream(netplaySocket.getOutputStream());
-                    Controller.Button button;
-                    if ((button = Controller.Button
-                            .fromKeyCode(evt.getKeyCode())) != null) {
-                        out.writeUTF(button.name() + " RELEASED");
-                        out.flush();
-                    }
-                } catch (IOException ex) {
-                    Logger.getLogger(MainFrame.class.getName())
-                            .log(Level.SEVERE, null, ex);
-                }
+        if (nes == null)
+            return;
+        nes.controller.keyReleased(evt, netplaySocket == null || isNetplayServer);
+        if (netplaySocket == null)
+            return;
+        try {
+            DataOutputStream out =
+                    new DataOutputStream(netplaySocket.getOutputStream());
+            Controller.Button button;
+            if ((button = Controller.Button
+                    .fromKeyCode(evt.getKeyCode())) != null) {
+                out.writeUTF(button.name() + " RELEASED");
+                out.flush();
             }
+        } catch (IOException ex) {
+            Logger.getLogger(MainFrame.class.getName())
+                    .log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_formKeyReleased
 
     private void resetMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_resetMenuItemActionPerformed
-        if (nes != null) {
-            int result = JOptionPane.showConfirmDialog(null,
-                    "Are you sure you want to reset the system?", "Reset",
-                    JOptionPane.YES_NO_OPTION);
-            if (result == JOptionPane.YES_OPTION)
-                nes.reset();
-        }
+        if (nes == null)
+            return;
+        int result = JOptionPane.showConfirmDialog(null,
+                "Are you sure you want to reset the system?", "Reset",
+                JOptionPane.YES_NO_OPTION);
+        if (result == JOptionPane.YES_OPTION)
+            nes.reset();
     }//GEN-LAST:event_resetMenuItemActionPerformed
 
     private void exitMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitMenuItemActionPerformed
         int result = JOptionPane.showConfirmDialog(null,
                     "Are you sure you want to exit?", "Exit",
                     JOptionPane.YES_NO_OPTION);
-            if (result == JOptionPane.YES_OPTION)
-                System.exit(0);
+        if (result == JOptionPane.YES_OPTION)
+            System.exit(0);
     }//GEN-LAST:event_exitMenuItemActionPerformed
 
     private void loadROMMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loadROMMenuItemActionPerformed
@@ -366,34 +366,34 @@ public class MainFrame extends javax.swing.JFrame {
                 "iNES cartridge files (.nes)", "nes");
         fileChooser.setFileFilter(filter);
         int result = fileChooser.showOpenDialog(null);
-        if (result == JFileChooser.APPROVE_OPTION) {
-            String fileName = fileChooser.getSelectedFile().getName();
-            String filePath = fileChooser.getSelectedFile().getAbsolutePath();
-            try {
-                if (nes == null) {
-                    nesRunnerThread = new NESRunnerThread();
-                    nes = new NES(filePath);
-                    nesRunnerThread.start();
-                } else {
-                    nesRunnerThread.stopRunning();
-                    nes.exchangeCartridge(filePath);
-                    nesRunnerThread = new NESRunnerThread();
-                    nesRunnerThread.start();
-                }
-                statusBarLabel.setText("");
-            } catch (IOException ex) {
-                Logger.getLogger(this.getClass().getName())
-                        .log(Level.SEVERE, null, ex);
-            } catch (UnsupportedMapperException ex) {
-                JOptionPane.showMessageDialog(null,
-                        "The mapper associated to \"" + fileName + "\" (iNES mapper number " +
-                        ex.getMapperNumber() + ") is not supported yet.",
-                        "Unsupported mapper", JOptionPane.ERROR_MESSAGE);
-            } catch (IllegalArgumentException ex) {
-                JOptionPane.showMessageDialog(null, "\"" + fileName +
-                        "\" is not a valid cartridge file.", "Invalid cartridge file",
-                        JOptionPane.ERROR_MESSAGE);
+        if (result != JFileChooser.APPROVE_OPTION)
+            return;
+        String fileName = fileChooser.getSelectedFile().getName();
+        String filePath = fileChooser.getSelectedFile().getAbsolutePath();
+        try {
+            if (nes == null) {
+                nesRunnerThread = new NESRunnerThread();
+                nes = new NES(filePath);
+                nesRunnerThread.start();
+            } else {
+                nesRunnerThread.stopRunning();
+                nes.exchangeCartridge(filePath);
+                nesRunnerThread = new NESRunnerThread();
+                nesRunnerThread.start();
             }
+            statusBarLabel.setText("");
+        } catch (IOException ex) {
+            Logger.getLogger(this.getClass().getName())
+                    .log(Level.SEVERE, null, ex);
+        } catch (UnsupportedMapperException ex) {
+            JOptionPane.showMessageDialog(null,
+                    "The mapper associated to \"" + fileName + "\" (iNES mapper number " +
+                    ex.getMapperNumber() + ") is not supported yet.",
+                    "Unsupported mapper", JOptionPane.ERROR_MESSAGE);
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(null, "\"" + fileName +
+                    "\" is not a valid cartridge file.", "Invalid cartridge file",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_loadROMMenuItemActionPerformed
 
@@ -444,16 +444,16 @@ public class MainFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_connectToServerMenuItemActionPerformed
 
     private void disconnectFromServerMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_disconnectFromServerMenuItemActionPerformed
-        if (netplaySocket != null && !isNetplayServer) {
-            try {
-                netplaySocket.close();
-                statusBarLabel.setText("Disconnected from server");
-                loadROMMenuItem.setEnabled(true);
-                resetMenuItem.setEnabled(true);
-            } catch (IOException ex) {
-                Logger.getLogger(MainFrame.class.getName())
-                        .log(Level.SEVERE, null, ex);
-            }
+        if (netplaySocket == null || isNetplayServer)
+            return;
+        try {
+            netplaySocket.close();
+            statusBarLabel.setText("Disconnected from server");
+            loadROMMenuItem.setEnabled(true);
+            resetMenuItem.setEnabled(true);
+        } catch (IOException ex) {
+            Logger.getLogger(MainFrame.class.getName())
+                    .log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_disconnectFromServerMenuItemActionPerformed
 
