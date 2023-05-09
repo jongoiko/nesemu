@@ -17,12 +17,14 @@ public class Controller extends MemoryMapped {
         public int keyCode;
         public boolean isPressedByPlayerOne;
         public boolean isPressedByPlayerTwo;
+        public boolean isPressedLocally;
         public byte bit;
 
         private Button(int keyCode, byte bit) {
             this.keyCode = keyCode;
             this.isPressedByPlayerOne = false;
             this.isPressedByPlayerTwo = false;
+            this.isPressedLocally = false;
             this.bit = bit;
         }
 
@@ -86,27 +88,33 @@ public class Controller extends MemoryMapped {
         }
     }
 
-    public void buttonPress(Button button, boolean isPlayerOne) {
-        if (isPlayerOne)
-            button.isPressedByPlayerOne = true;
-        else
-            button.isPressedByPlayerTwo = true;
+    public void commitButtonStates(boolean isPlayerOne) {
+        for (Button button : Button.values()) {
+            if (isPlayerOne)
+                button.isPressedByPlayerOne = button.isPressedLocally;
+            else
+                button.isPressedByPlayerTwo = button.isPressedLocally;
+        }
     }
 
-    public void buttonRelease(Button button, boolean isPlayerOne) {
-        if (isPlayerOne)
-            button.isPressedByPlayerOne = false;
-        else
-            button.isPressedByPlayerTwo = false;
+    public String getNetplayButtonStatesMessage(boolean isPlayerOne) {
+        final Controller.Button[] buttons = Controller.Button.values();
+        final char[] characters = new char[buttons.length];
+        for (int i = 0; i < characters.length; i++)
+            characters[i] = isPlayerOne ?
+                    (buttons[i].isPressedByPlayerOne ? '1' : '0') :
+                    (buttons[i].isPressedByPlayerTwo ? '1' : '0');
+        return new String(characters);
     }
 
-    public void handleNetplayButtonPress(String line, boolean isPlayerOne) {
-        final String[] strings = line.split(" ");
-        final Button button = Button.valueOf(strings[0]);
-        final boolean pressed = strings[1].equals("PRESSED");
-        if (pressed)
-            buttonPress(button, !isPlayerOne);
-        else
-            buttonRelease(button, !isPlayerOne);
+    public void processNetplayButtonStatesMessage(String message, boolean isPlayerOne) {
+        final Controller.Button[] buttons = Controller.Button.values();
+        for (int i = 0; i < buttons.length; i++) {
+            boolean pressed = message.charAt(i) == '1';
+            if (isPlayerOne)
+                buttons[i].isPressedByPlayerTwo = pressed;
+            else
+                buttons[i].isPressedByPlayerOne = pressed;
+        }
     }
 }

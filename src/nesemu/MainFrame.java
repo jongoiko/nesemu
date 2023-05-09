@@ -52,10 +52,16 @@ public class MainFrame extends javax.swing.JFrame {
         public void run() {
             if (netplaySocket == null || isNetplayServer)
                 nes.reset();
+            final boolean isPlayerOne = netplaySocket == null || isNetplayServer;
             while (!Thread.currentThread().isInterrupted()) {
                 if (shouldPerformNetplaySync.compareAndSet(true, false))
                     performInitialNetplaySync();
                 long frameStartTime = System.nanoTime(), frameEndTime;
+                nes.controller.commitButtonStates(isPlayerOne);
+                if (netplaySocket != null) {
+                    netplaySendButtonStates(isPlayerOne);
+                    netplayReceiveButtonStates(isPlayerOne);
+                }
                 nes.runUntilFrameReady(panel.img);
                 repaint();
                 do {
@@ -82,7 +88,6 @@ public class MainFrame extends javax.swing.JFrame {
                     nes.runUntilFrameReady(panel.img);
                     netplaySocket.getOutputStream().write(10);
                 }
-                (new NetplayButtonEventListenerThread()).start();
             } catch (IOException | ClassNotFoundException ex) {
                 Logger.getLogger(this.getClass().getName())
                         .log(Level.SEVERE, null, ex);
@@ -105,21 +110,33 @@ public class MainFrame extends javax.swing.JFrame {
         }
     }
 
-    private class NetplayButtonEventListenerThread extends Thread {
-        @Override
-        public void run() {
+    private void netplaySendButtonStates(boolean isPlayerOne) {
+        try {
+            DataOutputStream out =
+                    new DataOutputStream(netplaySocket.getOutputStream());
+            out.writeUTF(nes.controller.getNetplayButtonStatesMessage(isPlayerOne));
+            out.flush();
+        } catch (IOException ex) {
+            Logger.getLogger(MainFrame.class.getName())
+                    .log(Level.SEVERE, null, ex);
+        }
+    }
+
+    private void netplayReceiveButtonStates(boolean isPlayerOne) {
+        boolean done = false;
+        while (!done) {
             try {
                 final DataInputStream in =
                         new DataInputStream(netplaySocket.getInputStream());
-                String line;
-                while ((line = in.readUTF()) != null)
-                    nes.controller.handleNetplayButtonPress(line, isNetplayServer);
+                String line = in.readUTF();
+                nes.controller.processNetplayButtonStatesMessage(line, isPlayerOne);
+                done = true;
             } catch (IOException ex) {
-                Logger.getLogger(MainFrame.class.getName())
-                        .log(Level.SEVERE, null, ex);
+
             }
         }
     }
+
 
     private class NetplayServerThread extends Thread {
         @Override
@@ -299,26 +316,12 @@ public class MainFrame extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void netplaySendButtonPress(Controller.Button button, boolean isPressed) {
-        try {
-            DataOutputStream out =
-                    new DataOutputStream(netplaySocket.getOutputStream());
-            out.writeUTF(button.name() + (isPressed ? " PRESSED" : " RELEASED"));
-            out.flush();
-        } catch (IOException ex) {
-            Logger.getLogger(MainFrame.class.getName())
-                    .log(Level.SEVERE, null, ex);
-        }
-    }
-
     private void formKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_formKeyPressed
         Controller.Button button;
         if (nes == null || (button =
                 Controller.Button.fromKeyCode(evt.getKeyCode())) == null)
             return;
-        nes.controller.buttonPress(button, netplaySocket == null || isNetplayServer);
-        if (netplaySocket != null)
-            netplaySendButtonPress(button, true);
+        button.isPressedLocally = true;
     }//GEN-LAST:event_formKeyPressed
 
     private void formKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_formKeyReleased
@@ -326,9 +329,7 @@ public class MainFrame extends javax.swing.JFrame {
         if (nes == null || (button =
                 Controller.Button.fromKeyCode(evt.getKeyCode())) == null)
             return;
-        nes.controller.buttonRelease(button, netplaySocket == null || isNetplayServer);
-        if (netplaySocket != null)
-            netplaySendButtonPress(button, false);
+        button.isPressedLocally = false;
     }//GEN-LAST:event_formKeyReleased
 
     private void resetMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_resetMenuItemActionPerformed
