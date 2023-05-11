@@ -47,20 +47,34 @@ public class MainFrame extends javax.swing.JFrame {
     private class NESRunnerThread extends Thread {
         private static final AtomicBoolean shouldPerformNetplaySync =
                 new AtomicBoolean(false);
+        private static final AtomicBoolean shouldReset = new AtomicBoolean(false);
 
         @Override
         public void run() {
             if (netplaySocket == null || isNetplayServer)
                 nes.reset();
             final boolean isPlayerOne = netplaySocket == null || isNetplayServer;
+            boolean sendResetMessage = false;
             while (!Thread.currentThread().isInterrupted()) {
                 if (shouldPerformNetplaySync.compareAndSet(true, false))
                     performInitialNetplaySync();
+                if (shouldReset.compareAndSet(true, false)) {
+                    nes.reset();
+                    sendResetMessage = true;
+                }
                 long frameStartTime = System.nanoTime(), frameEndTime;
                 nes.controller.commitButtonStates(isPlayerOne);
                 if (netplaySocket != null) {
-                    netplaySendButtonStates(isPlayerOne);
-                    netplayReceiveButtonStates(isPlayerOne);
+                    try {
+                        if (sendResetMessage && isNetplayServer) {
+                            netplaySendResetMessage();
+                            sendResetMessage = false;
+                        } else
+                            netplaySendButtonStates(isPlayerOne);
+                    } catch (IOException ex) {
+
+                    }
+                    netplayReceiveMessage(isPlayerOne);
                 }
                 nes.runUntilFrameReady(panel.img);
                 repaint();
@@ -98,6 +112,10 @@ public class MainFrame extends javax.swing.JFrame {
             shouldPerformNetplaySync.set(true);
         }
 
+        public static void requestReset() {
+            shouldReset.set(true);
+        }
+
         public void stopRunning() {
             interrupt();
             while (isAlive()) {
@@ -108,35 +126,39 @@ public class MainFrame extends javax.swing.JFrame {
                 }
             }
         }
-    }
 
-    private void netplaySendButtonStates(boolean isPlayerOne) {
-        try {
+        private void netplaySendResetMessage() throws IOException {
             DataOutputStream out =
                     new DataOutputStream(netplaySocket.getOutputStream());
-            out.writeUTF(nes.controller.getNetplayButtonStatesMessage(isPlayerOne));
+            out.writeUTF("RESET");
             out.flush();
-        } catch (IOException ex) {
-            Logger.getLogger(MainFrame.class.getName())
-                    .log(Level.SEVERE, null, ex);
         }
-    }
 
-    private void netplayReceiveButtonStates(boolean isPlayerOne) {
-        boolean done = false;
-        while (!done) {
-            try {
-                final DataInputStream in =
-                        new DataInputStream(netplaySocket.getInputStream());
-                String line = in.readUTF();
-                nes.controller.processNetplayButtonStatesMessage(line, isPlayerOne);
-                done = true;
-            } catch (IOException ex) {
+        private void netplaySendButtonStates(boolean isPlayerOne) throws IOException {
+            DataOutputStream out =
+                    new DataOutputStream(netplaySocket.getOutputStream());
+            out.writeUTF("BUTTONS " + nes.controller.getNetplayButtonStatesMessage(isPlayerOne));
+            out.flush();
+        }
 
+        private void netplayReceiveMessage(boolean isPlayerOne) {
+            boolean done = false;
+            while (!done) {
+                try {
+                    final DataInputStream in =
+                            new DataInputStream(netplaySocket.getInputStream());
+                    String words[] = in.readUTF().split(" ");
+                    if (words[0].equals("RESET"))
+                        NESRunnerThread.requestReset();
+                    else
+                        nes.controller.processNetplayButtonStatesMessage(words[1], isPlayerOne);
+                    done = true;
+                } catch (IOException ex) {
+
+                }
             }
         }
     }
-
 
     private class NetplayServerThread extends Thread {
         @Override
@@ -339,7 +361,7 @@ public class MainFrame extends javax.swing.JFrame {
                 "Are you sure you want to reset the system?", "Reset",
                 JOptionPane.YES_NO_OPTION);
         if (result == JOptionPane.YES_OPTION)
-            nes.reset();
+            NESRunnerThread.requestReset();
     }//GEN-LAST:event_resetMenuItemActionPerformed
 
     private void exitMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitMenuItemActionPerformed
