@@ -78,26 +78,17 @@ public class PPU extends MemoryMapped {
     }
 
     private class PPUCTRL implements Serializable {
-        public int nametableAddressIncrement;       // 1 or 32
-        public int spritePatternTableAddress;       // 0 or 1
-        public int backgroundPatternTableAddress;   // 0 or 1
+        public boolean incrementVramAddressByWholeRow;
+        public boolean usingHighSpritePatternTable;
+        public boolean usingHighBackgroundPatternTable;
         public boolean eightBySixteenMode;
         public boolean isSlave;
         public boolean generateNMIOnVBlank;
 
-        public PPUCTRL() {
-            this.nametableAddressIncrement = 1;
-            this.spritePatternTableAddress = 0;
-            this.backgroundPatternTableAddress = 0;
-            this.eightBySixteenMode = false;
-            this.isSlave = false;
-            this.generateNMIOnVBlank = false;
-        }
-
         public void update(byte flags) {
-            nametableAddressIncrement = (flags & 4) != 0 ? 32 : 1;
-            spritePatternTableAddress = (flags & 8) >> 3;
-            backgroundPatternTableAddress = (flags & 16) >> 4;
+            incrementVramAddressByWholeRow = (flags & 4) != 0;
+            usingHighSpritePatternTable = (flags & 8) != 0;
+            usingHighBackgroundPatternTable = (flags & 16) != 0;
             eightBySixteenMode = (flags & 32) != 0;
             isSlave = (flags & 64) == 0;
             generateNMIOnVBlank = (flags & 128) != 0;
@@ -111,15 +102,6 @@ public class PPU extends MemoryMapped {
         public boolean showBackground;
         public boolean showSprites;
         public int emphasisBits;
-
-        public PPUMASK() {
-            this.grayscale = false;
-            this.showBackgroundLeft = false;
-            this.showSpritesLeft = false;
-            this.showBackground = false;
-            this.showSprites = false;
-            this.emphasisBits = 0;
-        }
 
         public void update(byte flags) {
             grayscale = (flags & 1) != 0;
@@ -135,12 +117,6 @@ public class PPU extends MemoryMapped {
         public boolean spriteOverflow;
         public boolean spriteZeroHit;
         public boolean verticalBlank;
-
-        public PPUSTATUS() {
-            this.spriteOverflow = false;
-            this.spriteZeroHit = false;
-            this.verticalBlank = false;
-        }
 
         public byte toByte() {
             return (byte)((spriteOverflow ? 32 : 0) | (spriteZeroHit ? 64 : 0) |
@@ -323,14 +299,14 @@ public class PPU extends MemoryMapped {
 
     private void readBackgroundPatternLowByte() {
         int patternByteAddress = nextTileNumber * 16 + (vramAddress >>> 12);
-        if (regPPUCTRL.backgroundPatternTableAddress != 0)
+        if (regPPUCTRL.usingHighBackgroundPatternTable)
             patternByteAddress |= 0x1000;
         nextTilePatternLowByte = cartridge.ppuReadByte((short)patternByteAddress);
     }
 
     private void readBackgroundPatternHighByte() {
         int patternByteAddress = nextTileNumber * 16 + 8 + (vramAddress >>> 12);
-        if (regPPUCTRL.backgroundPatternTableAddress != 0)
+        if (regPPUCTRL.usingHighBackgroundPatternTable)
             patternByteAddress |= 0x1000;
         nextTilePatternHighByte = cartridge.ppuReadByte((short)patternByteAddress);
     }
@@ -473,7 +449,7 @@ public class PPU extends MemoryMapped {
                     patternByteAddress = tileNumber * 16;
                     patternByteAddress += verticalFlip ?
                             7 - scanline + yPosition : scanline - yPosition;
-                    if (regPPUCTRL.spritePatternTableAddress != 0)
+                    if (regPPUCTRL.usingHighSpritePatternTable)
                         patternByteAddress |= 0x1000;
                 }
                 byte lsb = cartridge.ppuReadByte((short)patternByteAddress);
@@ -583,7 +559,7 @@ public class PPU extends MemoryMapped {
             }
             case 7 -> {
                 byte value = readByteFromVramAddress();
-                vramAddress += regPPUCTRL.nametableAddressIncrement;
+                vramAddress += regPPUCTRL.incrementVramAddressByWholeRow ? 32 : 1;
                 return value;
             }
         }
@@ -629,7 +605,7 @@ public class PPU extends MemoryMapped {
             }
             case 7 -> {
                 writeByteAtVramAddress(value);
-                vramAddress += regPPUCTRL.nametableAddressIncrement;
+                vramAddress += regPPUCTRL.incrementVramAddressByWholeRow ? 32 : 1;
             }
         }
     }
