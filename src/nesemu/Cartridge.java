@@ -4,6 +4,20 @@ import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+/* NES games were distributed in cartridges. They usually had separate memories
+ * for the games' code (PRG-ROM, mapped to the CPU's address space) and graphics
+ * (CHR-ROM, mapped to the PPU's address space).
+ *
+ * Without any address translation, code and graphics data could be up to 32KB
+ * and 8KB respectively. To overcome this limitation, manufacturers often included
+ * special chips inside the cartridges (called "mappers") which translated the
+ * addresses emitted by the processors to index the actual memory chips,
+ * effectively extending the system's available memory.
+ *
+ * For a more in-depth explanation (as well as a listing of known mappers) see
+ * https://www.nesdev.org/wiki/Mapper.
+ */
+
 public abstract class Cartridge extends MemoryMapped {
     private final static int PRG_ROM_BLOCK_SIZE = 16384;
     private final static int CHR_ROM_BLOCK_SIZE = 8192;
@@ -17,6 +31,13 @@ public abstract class Cartridge extends MemoryMapped {
     boolean hasPrgRAM;
     boolean hasChrRAM;
 
+    /* Although the PPU's address space can fit 4 nametables, usually only two
+     * could be stored in memory. Thus, a mirroring scheme was necessary, such
+     * that the PPU would "see" the same nametables in different address ranges.
+     * This was hardwired into the cartridge in earlier games, and some mappers
+     * supported switching the mirroring mode at runtime. See
+     * https://www.nesdev.org/wiki/Mirroring#Nametable_Mirroring
+     */
     public enum Mirroring {
         SINGLE_SCREEN_LOWER,
         SINGLE_SCREEN_UPPER,
@@ -35,6 +56,8 @@ public abstract class Cartridge extends MemoryMapped {
         this.hasChrRAM = hasChrRAM;
     }
 
+    // To be implemented by Cartridge subclasses corresponding to a specific
+    // mapper.
     abstract byte readPrgROMByte(short address);
     abstract void writePrgROMByte(short address, byte value);
 
@@ -81,6 +104,11 @@ public abstract class Cartridge extends MemoryMapped {
 
     }
 
+    /* The "de facto" file format for NES games is the .nes or iNES format
+     * (https://www.nesdev.org/wiki/INES). Although the format has many special
+     * fields to support as many games as possible, this method only uses the
+     * most basic fields.
+     */
     public static Cartridge fromINESFile(String filePath) throws IOException,
             UnsupportedMapperException, IllegalArgumentException {
         DataInputStream stream = new DataInputStream(new FileInputStream(filePath));
@@ -100,7 +128,7 @@ public abstract class Cartridge extends MemoryMapped {
             mirroring = Mirroring.VERTICAL;
         else
             mirroring = Mirroring.HORIZONTAL;
-        stream.readNBytes(8); // TODO
+        stream.readNBytes(8);
         // Assume no trainer
         boolean hasChrRAM = chrROMSize == 0;
         boolean hasPrgRAM = (flags6 & 2) != 0;

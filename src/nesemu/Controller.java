@@ -2,8 +2,19 @@ package nesemu;
 
 import java.awt.event.KeyEvent;
 
+/* The state of the controllers is read by games through addresses 0x4016 and
+ * 0x4017. When a byte with bit 0 set and then one with bit 0 clear are
+ * written in sequence to 0x4016, the states of the 8 buttons are latched. Then,
+ * the game may read the buttons bit by bit through the ports (0x4016 for player
+ * 1 and 0x4017 for player 2). See https://www.nesdev.org/wiki/Standard_controller
+*/
+
 public class Controller extends MemoryMapped {
 
+    /* To allow communicating button presses to the emulator on a frame-by-frame
+     * basis, isPressedLocally is copied to the appropriate field (player 1 or
+     * player two) with commitButtonStates.
+    */
     public enum Button {
         BUTTON_A(KeyEvent.VK_X, (byte)1),
         BUTTON_B(KeyEvent.VK_Z, (byte)(1 << 1)),

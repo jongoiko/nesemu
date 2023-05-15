@@ -1,5 +1,7 @@
 package nesemu;
 
+// https://www.nesdev.org/wiki/MMC1
+
 public class Mapper001Cartridge extends Cartridge {
     private static final int PRG_ROM_BANK_SIZE = 16384;
     private static final int PRG_RAM_BANK_SIZE = 8192;

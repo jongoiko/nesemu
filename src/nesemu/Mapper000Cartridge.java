@@ -1,5 +1,7 @@
 package nesemu;
 
+// https://www.nesdev.org/wiki/NROM
+
 public class Mapper000Cartridge extends Cartridge {
     public Mapper000Cartridge(byte[] prgROM, byte[] chrROM, Mirroring mirroring,
             boolean hasPrgRAM, boolean hasChrRAM) {

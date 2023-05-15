@@ -1,5 +1,7 @@
 package nesemu;
 
+// https://www.nesdev.org/wiki/UxROM
+
 public class Mapper002Cartridge extends Cartridge {
     private static final int BANK_SIZE = 16384;
 

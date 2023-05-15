@@ -8,12 +8,20 @@ import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/* The PPU (Picture Processing Unit) is the NES's graphics processor. In each
+ * clock cycle, it outputs a single pixel to the screen. It has its own address
+ * space (https://www.nesdev.org/wiki/PPU_memory_map) and it operates in parallel
+ * with the CPU. See https://www.nesdev.org/wiki/PPU
+ */
+
 public class PPU extends MemoryMapped {
     private final static int PALETTE_MEM_SIZE = 32;
     private final static int NAMETABLE_SIZE = 1024;
     private final static int OAM_SIZE = 256;
     private final static int NUM_COLORS = 64;
 
+    // The palette file was produced using Bisqwit's tool at
+    // https://bisqwit.iki.fi/utils/nespalette.php
     private final static int[] SYSTEM_PALETTE =
             readPaletteFromPalFile("/resources/ntscpalette.pal");
 
@@ -77,6 +85,9 @@ public class PPU extends MemoryMapped {
         regPPUSTATUS = new PPUSTATUS();
     }
 
+    // The PPU has a set of internal registers that may be read from and/or written
+    // to by the CPU: https://www.nesdev.org/wiki/PPU_registers
+
     private class PPUCTRL implements Serializable {
         public boolean incrementVramAddressByWholeRow;
         public boolean usingHighSpritePatternTable;
@@ -131,20 +142,28 @@ public class PPU extends MemoryMapped {
     }
 
     private static int[] readPaletteFromPalFile(String fileName) {
-        DataInputStream stream = new DataInputStream(PPU.class.getResourceAsStream(fileName));
+        DataInputStream stream = new DataInputStream(
+                PPU.class.getResourceAsStream(fileName));
         final int[] colors = new int[NUM_COLORS * 8];
         try {
             for (int i = 0; i < colors.length; i++) {
                 byte rgb[] = stream.readNBytes(3);
                 colors[i] = 0xFF000000 | (Byte.toUnsignedInt(rgb[0]) << 16) |
-                        (Byte.toUnsignedInt(rgb[1]) << 8) | Byte.toUnsignedInt(rgb[2]);
+                        (Byte.toUnsignedInt(rgb[1]) << 8) |
+                        Byte.toUnsignedInt(rgb[2]);
             }
         } catch (IOException ex) {
-            Logger.getLogger(PPU.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(PPU.class.getName())
+                    .log(Level.SEVERE, null, ex);
         }
         return colors;
     }
 
+    /* As mentioned, each clock tick of the PPU outputs a single pixel. This
+     * implementation only supports the NTSC version, and as such it follows the
+     * timings of the NTSC NES. For an overview of these timings and the workings
+     * of the rendering pipeline, see https://www.nesdev.org/wiki/PPU_rendering
+     */
     public void clockTick(BufferedImage img, CPU cpu) {
         if (scanline >= -1 && scanline < 240) {
             if (scanline == -1 && column == 1) {
@@ -227,6 +246,13 @@ public class PPU extends MemoryMapped {
         regPPUSTATUS.reset();
     }
 
+    /* After the color values for the background and/or the foreground have been
+     * obtained, their priority is resolved according to the rules explained here:
+     * https://www.nesdev.org/wiki/PPU_sprite_priority
+     *
+     * Once the priority is resolved, a grayscale mask and/or tinting may be
+     * applied, depending on the corresponding control bits of PPUMASK.
+     */
     private void renderPixel(Integer backgroundColorCode, Integer spriteColorCode,
             BufferedImage img) {
         int finalColorCode = Byte.toUnsignedInt(readByteFromPaletteMemory(0, true));
@@ -393,6 +419,13 @@ public class PPU extends MemoryMapped {
         Arrays.fill(secondaryOamMemory, (byte)0xFF);
     }
 
+    /* Sprite evaluation refers to the process of deciding which sprites will be
+     * rendered on the next scanline, and where. See
+     * https://www.nesdev.org/wiki/PPU_sprite_evaluation
+     *
+     * The sprite data is stored in OAM (Object Attribute Memory), whose format
+     * is specified at https://www.nesdev.org/wiki/PPU_OAM
+     */
     private void evaluateSprites() {
         isSpriteZeroLoadedToSecondaryOam = false;
         int spriteNumber = 0, visibleSpriteCount = 0;

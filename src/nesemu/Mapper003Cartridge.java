@@ -1,5 +1,7 @@
 package nesemu;
 
+// https://www.nesdev.org/wiki/INES_Mapper_003
+
 public class Mapper003Cartridge extends Cartridge {
     private static final int BANK_SIZE = 8192;
 

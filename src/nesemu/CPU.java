@@ -2,6 +2,23 @@ package nesemu;
 
 import java.io.Serializable;
 
+/* The CPU used in the NES was called the Ricoh 2A03, which was essentially a
+ * modified version of the popular 6502 processor. They are both 8-bit CPUs with
+ * a 16-bit address bus, and the instruction set and addressing modes are the
+ * same. However, unlike the 6502, the 2A03 lacked support for decimal mode,
+ * which means that although the D flag of the processor status register can be
+ * set and cleared, it has no effect on arithmetic instructions.
+ *
+ * This implementation supports all official instructions, as well as most of the
+ * unofficial ones. A comprehensive reference of the 6502 instruction set and
+ * architecture can be found here:
+ * https://www.masswerk.at/6502/6502_instruction_set.html
+ *
+ * Note that in the 6502's terminology, a "page" refers to a contiguous, aligned
+ * chunk of 256 bytes of memory: addresses 0x00XX belong to page 0, 0x01XX to
+ * page 1 and so on.
+ */
+
 public class CPU extends MemoryMapped {
     private byte regA;
     private byte regY;
@@ -43,6 +60,11 @@ public class CPU extends MemoryMapped {
 
     @Override
     boolean addressIsMapped(short address) {
+        /* Writes to OAMDMA (https://www.nesdev.org/wiki/PPU_registers#OAMDMA)
+         * are "caught" by the processor itself. When a byte is written to this
+         * address, a DMA transfer begins, which will suspend the CPU for 513 or
+         * 514 cycles until the transfer is completed.
+         */
         return address == 0x4014;
     }
 
@@ -57,6 +79,7 @@ public class CPU extends MemoryMapped {
         dmaCyclesLeft = cycleCount % 2 == 0 ? 513 : 514;
     }
 
+    // https://www.nesdev.org/wiki/Status_flags
     private enum StatusFlag {
         CARRY((byte)1),
         ZERO((byte)(1 << 1)),
@@ -103,6 +126,11 @@ public class CPU extends MemoryMapped {
 
     public void clockTick() {
         if (dmaCyclesLeft > 0) {
+            /* During DMA transfers, page number XX in memory (where XX is the
+             * value written to OAMDMA) is copied to the PPU's OAM memory through
+             * OAMDATA. This is performed as a series of alternating read/write
+             * cycles.
+             */
             if (dmaCyclesLeft <= 512) {
                 if (dmaCyclesLeft % 2 == 0) {
                     int address = (regOAMDMA << 8) + 256 - (dmaCyclesLeft / 2);
@@ -114,18 +142,20 @@ public class CPU extends MemoryMapped {
             return;
         }
         if (cyclesUntilNextInstruction <= 0) {
-            // Check for interrupts, etc.
+            /* cyclesUntilNextInstruction is decremented on each clock tick. When
+             * this counter reaches 0, a new instruction is fetched and executed,
+             * adding its latency in cycles to the counter. This allows accurate
+             * emulation of the instructions' timings.
+             */
             if (assertNMI)
                 serviceNMI();
             else {
                 if (requestNMI)
                     assertNMI = true;
-                // short prevRegPC = regPC;
                 final byte opcode = readByteAtPCAndIncrement();
                 final Instruction instruction = instructionLookupTable[Byte.toUnsignedInt(opcode)];
                 operandEffectiveAddress = getEffectiveAddress(instruction);
                 cyclesUntilNextInstruction += instruction.cycles;
-                // log(instruction, prevRegPC);
                 instruction.operation.run();
             }
         }
@@ -143,6 +173,11 @@ public class CPU extends MemoryMapped {
     }
 
     private void serviceNMI() {
+        /* NMI's (Non-Maskable Interrupts) are issued by the PPU when it reaches
+         * VBlank if it has been configured to do so. The PC and P registers
+         * are pushed to the stack and a jump is performed to the interrupt
+         * handling routine.
+         */
         pushToStack((byte)((regPC & 0xFF00) >> 8));
         pushToStack((byte)(regPC & 0xFF));
         pushPToStack(false);
@@ -157,6 +192,9 @@ public class CPU extends MemoryMapped {
         return addressSpace.readByte(regPC++);
     }
 
+    /* The 2A03 supports 13 addressing modes which dictate where each instruction's
+     * operand is located.
+     */
     private short getEffectiveAddress(Instruction instruction) {
         short address = 0, indirectAddress;
         short previousPage;
@@ -188,6 +226,11 @@ public class CPU extends MemoryMapped {
                 address = (short)Byte.toUnsignedInt(addressSpace.readByte(indirectAddress));
                 short secondByteAddress = (short)(indirectAddress & 0xFF00 |
                         (indirectAddress + 1) & 0xFF);
+                /* This apparent miscalculation of the second byte's address
+                 * emulates a bug found in the original 6502, which was
+                 * unfortunately also present in the 2A03. See
+                 * https://everything2.com/title/6502+indirect+JMP+bug
+                */
                 address += addressSpace.readByte(secondByteAddress) << 8;
                 break;
             case INDIRECT_X:
@@ -240,6 +283,7 @@ public class CPU extends MemoryMapped {
     private final Instruction undefinedInstruction = new Instruction("UNDEFINED",
             AddressingMode.IMPLIED, 1, () -> NOP());
 
+    // Unofficial instructions are marked with an asterisk (*).
     private final Instruction[] instructionLookupTable = new Instruction[] {
         // 0-
         new Instruction("BRK", AddressingMode.IMPLIED, 7,     () -> BRK()),
