@@ -72,9 +72,9 @@ public class PPU extends MemoryMapped {
         spritePatternHighByteShiftRegisters = new byte[8];
         spriteAttributes = new byte[8];
         spriteXPositions = new byte[8];
-        regPPUCTRL = new PPUCTRL(1, 0, 0, false, true, false);
-        regPPUMASK = new PPUMASK(false, false, false, false, false, 0);
-        regPPUSTATUS = new PPUSTATUS(false, false, false);
+        regPPUCTRL = new PPUCTRL();
+        regPPUMASK = new PPUMASK();
+        regPPUSTATUS = new PPUSTATUS();
     }
 
     private class PPUCTRL implements Serializable {
@@ -85,15 +85,13 @@ public class PPU extends MemoryMapped {
         public boolean isSlave;
         public boolean generateNMIOnVBlank;
 
-        public PPUCTRL(int nametableAddressIncrement, int spritePatternTableAddress,
-                int backgroundPatternTableAddress, boolean eightBySixteenMode, boolean isSlave,
-                boolean generateNMIOnVBlank) {
-            this.nametableAddressIncrement = nametableAddressIncrement;
-            this.spritePatternTableAddress = spritePatternTableAddress;
-            this.backgroundPatternTableAddress = backgroundPatternTableAddress;
-            this.eightBySixteenMode = eightBySixteenMode;
-            this.isSlave = isSlave;
-            this.generateNMIOnVBlank = generateNMIOnVBlank;
+        public PPUCTRL() {
+            this.nametableAddressIncrement = 1;
+            this.spritePatternTableAddress = 0;
+            this.backgroundPatternTableAddress = 0;
+            this.eightBySixteenMode = false;
+            this.isSlave = false;
+            this.generateNMIOnVBlank = false;
         }
 
         public void update(byte flags) {
@@ -114,15 +112,13 @@ public class PPU extends MemoryMapped {
         public boolean showSprites;
         public int emphasisBits;
 
-        public PPUMASK(boolean grayscale, boolean showBackgroundLeft,
-                boolean showSpritesLeft, boolean showBackground, boolean showSprites,
-                int emphasisBits) {
-            this.grayscale = grayscale;
-            this.showBackgroundLeft = showBackgroundLeft;
-            this.showSpritesLeft = showSpritesLeft;
-            this.showBackground = showBackground;
-            this.showSprites = showSprites;
-            this.emphasisBits = emphasisBits;
+        public PPUMASK() {
+            this.grayscale = false;
+            this.showBackgroundLeft = false;
+            this.showSpritesLeft = false;
+            this.showBackground = false;
+            this.showSprites = false;
+            this.emphasisBits = 0;
         }
 
         public void update(byte flags) {
@@ -140,11 +136,10 @@ public class PPU extends MemoryMapped {
         public boolean spriteZeroHit;
         public boolean verticalBlank;
 
-        public PPUSTATUS(boolean spriteOverflow, boolean spriteZeroHit,
-                boolean verticalBlank) {
-            this.spriteOverflow = spriteOverflow;
-            this.spriteZeroHit = spriteZeroHit;
-            this.verticalBlank = verticalBlank;
+        public PPUSTATUS() {
+            this.spriteOverflow = false;
+            this.spriteZeroHit = false;
+            this.verticalBlank = false;
         }
 
         public byte toByte() {
