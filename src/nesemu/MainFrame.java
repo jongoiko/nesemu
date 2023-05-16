@@ -420,6 +420,8 @@ public class MainFrame extends javax.swing.JFrame {
         if (netplayServerThread != null && netplayServerThread.isAlive()) {
             netplayServerThread.interrupt();
             statusBarLabel.setText("Netplay server stopped");
+            if (netplaySocket == null)
+                return;
             try {
                 netplaySocket.close();
             } catch (IOException ex) {
