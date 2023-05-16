@@ -71,10 +71,11 @@ public class MainFrame extends javax.swing.JFrame {
                             sendResetMessage = false;
                         } else
                             netplaySendButtonStates(isPlayerOne);
+                        netplayReceiveMessage(isPlayerOne);
                     } catch (IOException ex) {
-
+                        Logger.getLogger(MainFrame.class.getName())
+                                .log(Level.SEVERE, null, ex);
                     }
-                    netplayReceiveMessage(isPlayerOne);
                 }
                 nes.runUntilFrameReady(panel.img);
                 repaint();
@@ -141,21 +142,22 @@ public class MainFrame extends javax.swing.JFrame {
             out.flush();
         }
 
-        private void netplayReceiveMessage(boolean isPlayerOne) {
-            boolean done = false;
-            while (!done) {
-                try {
-                    final DataInputStream in =
-                            new DataInputStream(netplaySocket.getInputStream());
-                    String words[] = in.readUTF().split(" ");
-                    if (words[0].equals("RESET"))
-                        NESRunnerThread.requestReset();
-                    else
-                        nes.controller.processNetplayButtonStatesMessage(words[1], isPlayerOne);
-                    done = true;
-                } catch (IOException ex) {
-
-                }
+        private void netplayReceiveMessage(boolean isPlayerOne) throws IOException {
+            try {
+                final DataInputStream in =
+                        new DataInputStream(netplaySocket.getInputStream());
+                String words[] = in.readUTF().split(" ");
+                if (words[0].equals("RESET"))
+                    NESRunnerThread.requestReset();
+                else
+                    nes.controller.processNetplayButtonStatesMessage(words[1], isPlayerOne);
+            } catch (IOException ex) {
+                netplaySocket.close();
+                statusBarLabel.setText("Connection closed by " +
+                        (isNetplayServer ? "client" : "server"));
+                netplaySocket = null;
+                loadROMMenuItem.setEnabled(true);
+                resetMenuItem.setEnabled(true);
             }
         }
     }
