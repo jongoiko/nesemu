@@ -34,7 +34,7 @@ public class ScreenPanel extends javax.swing.JPanel {
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    void init() {
+    public void init() {
         img = new BufferedImage(SCREEN_WIDTH, SCREEN_HEIGHT,
                 BufferedImage.TYPE_INT_ARGB);
     }
