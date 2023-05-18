@@ -50,7 +50,7 @@ public class MainFrame extends javax.swing.JFrame {
         private static final AtomicBoolean shouldReset = new AtomicBoolean(false);
 
         @Override
-        public void run() {
+        public synchronized void run() {
             if (netplaySocket == null || isNetplayServer)
                 nes.reset();
             final boolean isPlayerOne = netplaySocket == null || isNetplayServer;
@@ -115,17 +115,6 @@ public class MainFrame extends javax.swing.JFrame {
 
         public static void requestReset() {
             shouldReset.set(true);
-        }
-
-        public void stopRunning() {
-            interrupt();
-            while (isAlive()) {
-                try {
-                    join();
-                } catch (InterruptedException ex) {
-
-                }
-            }
         }
 
         private void netplaySendResetMessage() throws IOException {
@@ -390,7 +379,7 @@ public class MainFrame extends javax.swing.JFrame {
                 nes = new NES(filePath);
                 nesRunnerThread.start();
             } else {
-                nesRunnerThread.stopRunning();
+                nesRunnerThread.interrupt();
                 nes.exchangeCartridge(filePath);
                 nesRunnerThread = new NESRunnerThread();
                 nesRunnerThread.start();
@@ -448,7 +437,7 @@ public class MainFrame extends javax.swing.JFrame {
             resetMenuItem.setEnabled(false);
             isNetplayServer = false;
             if (nes != null)
-                nesRunnerThread.stopRunning();
+                nesRunnerThread.interrupt();
             NESRunnerThread.requestInitialNetplaySync();
             nesRunnerThread = new NESRunnerThread();
             nesRunnerThread.start();
