@@ -6,7 +6,6 @@ import java.awt.image.BufferedImage;
 public class ScreenPanel extends javax.swing.JPanel {
     private final static int SCREEN_WIDTH = 256;
     private final static int SCREEN_HEIGHT = 240;
-
     BufferedImage img;
 
     public ScreenPanel() {
@@ -15,7 +14,13 @@ public class ScreenPanel extends javax.swing.JPanel {
 
     @Override
     public void paint(Graphics g) {
-        g.drawImage(img, 0, 0, getWidth(), getHeight(), null);
+        int width = getWidth(), height = getHeight();
+        double ratio = Math.min((double)width / SCREEN_WIDTH,
+                (double)height / SCREEN_HEIGHT);
+        int targetWidth = (int)(ratio * SCREEN_WIDTH);
+        int targetHeight = (int)(ratio * SCREEN_HEIGHT);
+        int targetX = (width - targetWidth) / 2, targetY = (height - targetHeight) / 2;
+        g.drawImage(img, targetX, targetY, targetWidth, targetHeight, null);
     }
 
     @SuppressWarnings("unchecked")
