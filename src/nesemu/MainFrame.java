@@ -383,7 +383,9 @@ public class MainFrame extends javax.swing.JFrame {
                 nesRunnerThread = new NESRunnerThread();
                 nesRunnerThread.start();
             }
-            statusBarLabel.setText(" ");
+            String nameWithoutExtension =
+                    fileName.substring(0, fileName.lastIndexOf('.'));
+            statusBarLabel.setText("Running \"" + nameWithoutExtension + "\"");
         } catch (IOException ex) {
             Logger.getLogger(this.getClass().getName())
                     .log(Level.SEVERE, null, ex);
