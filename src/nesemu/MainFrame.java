@@ -100,7 +100,6 @@ public class MainFrame extends javax.swing.JFrame {
                     }
                     nes = (NES)(new ObjectInputStream(netplaySocket.getInputStream()))
                             .readObject();
-                    nes.runUntilFrameReady(panel.img);
                     netplaySocket.getOutputStream().write(10);
                 }
             } catch (IOException | ClassNotFoundException ex) {
