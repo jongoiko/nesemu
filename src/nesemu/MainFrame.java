@@ -392,7 +392,7 @@ public class MainFrame extends javax.swing.JFrame {
         } catch (UnsupportedMapperException ex) {
             JOptionPane.showMessageDialog(null,
                     "The mapper associated to \"" + fileName + "\" (iNES mapper number " +
-                    ex.getMapperNumber() + ") is not supported yet.",
+                    ex.mapperNumber + ") is not supported yet.",
                     "Unsupported mapper", JOptionPane.ERROR_MESSAGE);
         } catch (IllegalArgumentException ex) {
             JOptionPane.showMessageDialog(null, "\"" + fileName +
