@@ -158,7 +158,7 @@ public class CPU extends MemoryMapped {
     }
 
     private short getEffectiveAddress(Instruction instruction) {
-        short address = 0, indirectAddress = 0;
+        short address = 0, indirectAddress;
         short previousPage;
         isMemoryOperand = true;
         switch (instruction.addressingMode) {
