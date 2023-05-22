@@ -61,7 +61,7 @@ public class MainFrame extends javax.swing.JFrame {
                 new AtomicBoolean(false);
 
         @Override
-        public synchronized void run() {
+        public void run() {
             final boolean isPlayerOne = netplaySocket == null || isNetplayServer;
             if (isPlayerOne)
                 nes.reset();
