@@ -60,9 +60,9 @@ public class MainFrame extends javax.swing.JFrame {
 
         @Override
         public synchronized void run() {
-            if (netplaySocket == null || isNetplayServer)
-                nes.reset();
             final boolean isPlayerOne = netplaySocket == null || isNetplayServer;
+            if (isPlayerOne)
+                nes.reset();
             boolean sendResetMessage = false;
             while (!Thread.currentThread().isInterrupted()) {
                 if (shouldPerformNetplaySync.compareAndSet(true, false))
