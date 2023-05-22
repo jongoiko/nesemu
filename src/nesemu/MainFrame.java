@@ -39,7 +39,7 @@ public class MainFrame extends javax.swing.JFrame {
     private boolean isNetplayServer;
     private NetplayServerThread netplayServerThread;
 
-    final ScreenPanel panel;
+    private final ScreenPanel panel;
 
     public MainFrame() {
         try {
