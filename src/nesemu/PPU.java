@@ -93,7 +93,6 @@ public class PPU extends MemoryMapped {
         public boolean usingHighSpritePatternTable;
         public boolean usingHighBackgroundPatternTable;
         public boolean eightBySixteenMode;
-        public boolean isSlave;
         public boolean generateNMIOnVBlank;
 
         public void update(byte flags) {
@@ -101,7 +100,6 @@ public class PPU extends MemoryMapped {
             usingHighSpritePatternTable = (flags & 8) != 0;
             usingHighBackgroundPatternTable = (flags & 16) != 0;
             eightBySixteenMode = (flags & 32) != 0;
-            isSlave = (flags & 64) == 0;
             generateNMIOnVBlank = (flags & 128) != 0;
         }
     }
