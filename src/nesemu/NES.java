@@ -9,7 +9,7 @@ public class NES implements Serializable {
     private final CPU cpu;
     private final PPU ppu;
     private final RAM ram;
-    private Cartridge cartridge;
+    public Cartridge cartridge;
     public final Controller controller;
 
     public NES(String cartridgeFilePath) throws IOException,

@@ -31,6 +31,8 @@ public abstract class Cartridge extends MemoryMapped {
     public boolean hasPrgRAM;
     public boolean hasChrRAM;
 
+    private String name = "";
+
     /* Although the PPU's address space can fit 4 nametables, usually only two
      * could be stored in memory. Thus, a mirroring scheme was necessary, such
      * that the PPU would "see" the same nametables in different address ranges.
@@ -104,6 +106,10 @@ public abstract class Cartridge extends MemoryMapped {
 
     }
 
+    public String getName() {
+        return name;
+    }
+
     /* The "de facto" file format for NES games is the .nes or iNES format
      * (https://www.nesdev.org/wiki/INES). Although the format has many special
      * fields to support as many games as possible, this method only uses the
@@ -135,7 +141,11 @@ public abstract class Cartridge extends MemoryMapped {
         byte prgROM[] = stream.readNBytes(PRG_ROM_BLOCK_SIZE * prgROMSize);
         byte chrROM[] = hasChrRAM ? new byte[CHR_ROM_BLOCK_SIZE] :
                 stream.readNBytes(CHR_ROM_BLOCK_SIZE * chrROMSize);
-        return assignMapper(prgROM, chrROM, mirroring, hasPrgRAM, hasChrRAM, mapperNumber);
+        Cartridge cartridge =
+                assignMapper(prgROM, chrROM, mirroring, hasPrgRAM, hasChrRAM, mapperNumber);
+        cartridge.name = filePath.substring(filePath.lastIndexOf("/") + 1,
+                filePath.lastIndexOf('.'));
+        return cartridge;
     }
 
     private static Cartridge assignMapper(byte prgROM[], byte chrROM[],
