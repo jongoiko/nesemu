@@ -7,6 +7,7 @@ import java.awt.Color;
 import java.awt.GridLayout;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
@@ -23,6 +24,7 @@ import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.JTextPane;
 import javax.swing.text.NumberFormatter;
 
 public class MainFrame extends javax.swing.JFrame {
@@ -217,7 +219,9 @@ public class MainFrame extends javax.swing.JFrame {
         resetMenuItem = new javax.swing.JMenuItem();
         exitMenuItem = new javax.swing.JMenuItem();
         jMenu4 = new javax.swing.JMenu();
-        jMenu1 = new javax.swing.JMenu();
+        HelpMenu = new javax.swing.JMenu();
+        emulatorHelpMenuItem = new javax.swing.JMenuItem();
+        netplayHelpMenuItem = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
         jMenu5 = new javax.swing.JMenu();
         startServerMenuItem = new javax.swing.JMenuItem();
@@ -288,8 +292,27 @@ public class MainFrame extends javax.swing.JFrame {
         jMenu4.setText("Settings");
         menuBar.add(jMenu4);
 
-        jMenu1.setText("Help");
-        menuBar.add(jMenu1);
+        HelpMenu.setText("Help");
+
+        emulatorHelpMenuItem.setFont(new java.awt.Font("Fira Code", 0, 13)); // NOI18N
+        emulatorHelpMenuItem.setText("Emulator");
+        emulatorHelpMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                emulatorHelpMenuItemActionPerformed(evt);
+            }
+        });
+        HelpMenu.add(emulatorHelpMenuItem);
+
+        netplayHelpMenuItem.setFont(new java.awt.Font("Fira Code", 0, 13)); // NOI18N
+        netplayHelpMenuItem.setText("Netplay");
+        netplayHelpMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                netplayHelpMenuItemActionPerformed(evt);
+            }
+        });
+        HelpMenu.add(netplayHelpMenuItem);
+
+        menuBar.add(HelpMenu);
 
         jMenu2.setText("Netplay");
 
@@ -537,6 +560,29 @@ public class MainFrame extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_disconnectFromServerMenuItemActionPerformed
 
+    private void emulatorHelpMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_emulatorHelpMenuItemActionPerformed
+        showHelpHTMLFile("/resources/EmulatorHelp.html", "Emulator help");
+    }//GEN-LAST:event_emulatorHelpMenuItemActionPerformed
+
+    private void netplayHelpMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_netplayHelpMenuItemActionPerformed
+        showHelpHTMLFile("/resources/NetplayHelp.html", "Netplay help");
+    }//GEN-LAST:event_netplayHelpMenuItemActionPerformed
+
+    private void showHelpHTMLFile(String fileName, String helpWindowTitle) {
+        final JTextPane helpPane = new JTextPane();
+        helpPane.setEditable(false);
+        helpPane.setContentType("text/html");
+        final InputStream in = MainFrame.class.getResourceAsStream(fileName);
+        try {
+            helpPane.read(in, null);
+        } catch (IOException ex) {
+            Logger.getLogger(MainFrame.class.getName())
+                    .log(Level.SEVERE, null, ex);
+        }
+        JOptionPane.showMessageDialog(null, helpPane,
+                helpWindowTitle, JOptionPane.INFORMATION_MESSAGE);
+    }
+
     public static void main(String args[]) throws IOException {
         MainFrame mf = new MainFrame();
         mf.setLocationRelativeTo(null);
@@ -549,10 +595,11 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JMenu HelpMenu;
     private javax.swing.JMenuItem connectToServerMenuItem;
     private javax.swing.JMenuItem disconnectFromServerMenuItem;
+    private javax.swing.JMenuItem emulatorHelpMenuItem;
     private javax.swing.JMenuItem exitMenuItem;
-    private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenu jMenu3;
     private javax.swing.JMenu jMenu4;
@@ -560,6 +607,7 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JMenuItem loadROMMenuItem;
     private javax.swing.JMenuBar menuBar;
+    private javax.swing.JMenuItem netplayHelpMenuItem;
     private javax.swing.JMenuItem resetMenuItem;
     private javax.swing.JMenuItem startServerMenuItem;
     private javax.swing.JLabel statusBarLabel;
