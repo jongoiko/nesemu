@@ -110,8 +110,7 @@ public class MainFrame extends javax.swing.JFrame {
                             netplaySendButtonStates(isPlayerOne);
                         netplayReceiveMessage(isPlayerOne);
                     } catch (IOException ex) {
-                        Logger.getLogger(MainFrame.class.getName())
-                                .log(Level.SEVERE, null, ex);
+                        showConnectionClosedMessage();
                     }
                 }
                 nes.runUntilFrameReady(panel.img);
@@ -172,18 +171,22 @@ public class MainFrame extends javax.swing.JFrame {
                             .processNetplayButtonStatesMessage(words[1], isPlayerOne);
                 }
             } catch (IOException ex) {
-                try {
-                    netplaySocket.close();
-                } catch (IOException ex1) {
-                    Logger.getLogger(MainFrame.class.getName())
-                            .log(Level.SEVERE, null, ex1);
-                }
-                statusBarLabel.setText("Connection closed by " +
-                        (isNetplayServer ? "client" : "server"));
-                netplaySocket = null;
-                loadROMMenuItem.setEnabled(true);
-                resetMenuItem.setEnabled(true);
+                showConnectionClosedMessage();
             }
+        }
+
+        private void showConnectionClosedMessage() {
+            try {
+                netplaySocket.close();
+            } catch (IOException ex1) {
+                Logger.getLogger(MainFrame.class.getName())
+                        .log(Level.SEVERE, null, ex1);
+            }
+            statusBarLabel.setText("Connection closed by " +
+                    (isNetplayServer ? "client" : "server"));
+            netplaySocket = null;
+            loadROMMenuItem.setEnabled(true);
+            resetMenuItem.setEnabled(true);
         }
     }
 
