@@ -194,9 +194,8 @@ public class CPU extends MemoryMapped {
         return addressSpace.readByte(regPC++);
     }
 
-    /* The 2A03 supports 13 addressing modes which dictate where each instruction's
-     * operand is located.
-     */
+    // The 2A03 supports 13 addressing modes which dictate where each instruction's
+    // operand is located.
     private short getEffectiveAddress(Instruction instruction) {
         short address = 0, indirectAddress;
         short previousPage;
