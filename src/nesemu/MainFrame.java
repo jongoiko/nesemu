@@ -426,19 +426,20 @@ public class MainFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_startServerMenuItemActionPerformed
 
     private void stopServerMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_stopServerMenuItemActionPerformed
+        if (netplayServerThread == null || netplaySocket == null)
+            return;
+        statusBarLabel.setText("Netplay server stopped");
         if (netplayServerThread != null && netplayServerThread.isAlive()) {
             netplayServerThread.interrupt();
-            statusBarLabel.setText("Netplay server stopped");
-            if (netplaySocket == null)
-                return;
+        }
+        if (netplaySocket != null)
             try {
                 netplaySocket.close();
+                netplaySocket = null;
             } catch (IOException ex) {
                 Logger.getLogger(MainFrame.class.getName())
                         .log(Level.SEVERE, null, ex);
             }
-        }
-        netplaySocket = null;
     }//GEN-LAST:event_stopServerMenuItemActionPerformed
 
     private class HostnamePortInputPanel extends JPanel {
