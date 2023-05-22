@@ -53,6 +53,24 @@ public class MainFrame extends javax.swing.JFrame {
         panel.init();
     }
 
+    /* NESRunnerThread runs the emulator and, when a netplay connection is active
+     * (i. e. netplaySocket != null), handles the communication with the peer.
+     *
+     * As for the netplay architecture, sending the whole screen image from the
+     * server to the client each frame is too slow, so a distributed approach is
+     * used instead: both client and server have a running emulator.
+     *
+     * If both instances of the emulator are equal AND they receive the same button
+     * presses at the same time, they will stay synchronized. To achieve this,
+     * both hosts send the states of their respective buttons on each frame, and
+     * wait to receive those of their peer before progressing to the next frame.
+     * Although this is vulnerable to network delays, it ensures that both
+     * emulators will stay synched at all times.
+     *
+     * Note that when first establishing a connection and when the server switches
+     * the running cartridge, the NES instance of the server is serialized and
+     * sent to the client over the socket.
+     */
     private class NESRunnerThread extends Thread {
         public static final AtomicBoolean shouldSendSerializedNES =
                 new AtomicBoolean(false);
