@@ -396,10 +396,10 @@ public class PPU extends MemoryMapped {
         for (int i = 0; i < 8; i++) {
             int xPosition = spriteXPositions[i];
             if (xPosition == 0) {
-                byte lsb = spritePatternLowByteShiftRegisters[i];
-                byte msb = spritePatternHighByteShiftRegisters[i];
-                spriteColorNumber = ((lsb & 0x80) != 0 ? 1 : 0) +
-                        2 * ((msb & 0x80) != 0 ? 1 : 0);
+                byte lowByte = spritePatternLowByteShiftRegisters[i];
+                byte highByte = spritePatternHighByteShiftRegisters[i];
+                spriteColorNumber = ((lowByte & 0x80) != 0 ? 1 : 0) +
+                        2 * ((highByte & 0x80) != 0 ? 1 : 0);
                 int palette = spriteAttributes[i] & 3;
                 spriteHasPriorityOverBackground = (spriteAttributes[i] & 0x20) == 0;
                 int colorCode = Byte.toUnsignedInt(
@@ -460,37 +460,37 @@ public class PPU extends MemoryMapped {
                 spritePatternHighByteShiftRegisters[i] = 0;
             } else {
                 spriteAttributes[i] = secondaryOamMemory[i * 4 + 2];
-                boolean horizontalFlip = (spriteAttributes[i] & 0x40) != 0;
-                boolean verticalFlip = (spriteAttributes[i] & 0x80) != 0;
+                boolean isFlippedHorizontally = (spriteAttributes[i] & 0x40) != 0;
+                boolean isFlippedVertically = (spriteAttributes[i] & 0x80) != 0;
                 int yPosition = Byte.toUnsignedInt(secondaryOamMemory[i * 4]);
                 int patternByteAddress;
                 if (regPPUCTRL.eightBySixteenMode) {
                     byte tileNumberByte = secondaryOamMemory[i * 4 + 1];
                     int tileNumber = Byte.toUnsignedInt(tileNumberByte) >>> 1;
                     patternByteAddress = tileNumber * 32;
-                    if (verticalFlip && scanline - yPosition <= 7 ||
-                            !verticalFlip && scanline - yPosition > 7)
+                    if (isFlippedVertically && scanline - yPosition <= 7 ||
+                            !isFlippedVertically && scanline - yPosition > 7)
                         patternByteAddress += 16;
-                    patternByteAddress += verticalFlip ?
+                    patternByteAddress += isFlippedVertically ?
                             7 - (scanline - yPosition) % 8: (scanline - yPosition) % 8;
                     if ((tileNumberByte & 1) != 0)
                         patternByteAddress |= 0x1000;
                 } else {
                     int tileNumber = Byte.toUnsignedInt(secondaryOamMemory[i * 4 + 1]);
                     patternByteAddress = tileNumber * 16;
-                    patternByteAddress += verticalFlip ?
+                    patternByteAddress += isFlippedVertically ?
                             7 - scanline + yPosition : scanline - yPosition;
                     if (regPPUCTRL.usingHighSpritePatternTable)
                         patternByteAddress |= 0x1000;
                 }
-                byte lsb = cartridge.ppuReadByte((short)patternByteAddress);
-                byte msb = cartridge.ppuReadByte((short)(patternByteAddress + 8));
-                if (horizontalFlip) {
-                    lsb = reverseBits(lsb);
-                    msb = reverseBits(msb);
+                byte lowByte = cartridge.ppuReadByte((short)patternByteAddress);
+                byte highByte = cartridge.ppuReadByte((short)(patternByteAddress + 8));
+                if (isFlippedHorizontally) {
+                    lowByte = reverseBits(lowByte);
+                    highByte = reverseBits(highByte);
                 }
-                spritePatternLowByteShiftRegisters[i] = lsb;
-                spritePatternHighByteShiftRegisters[i] = msb;
+                spritePatternLowByteShiftRegisters[i] = lowByte;
+                spritePatternHighByteShiftRegisters[i] = highByte;
             }
         }
     }
