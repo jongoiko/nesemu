@@ -54,7 +54,7 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     private class NESRunnerThread extends Thread {
-        private static final AtomicBoolean shouldPerformNetplaySync =
+        private static final AtomicBoolean shouldSendSerializedNES =
                 new AtomicBoolean(false);
         private static final AtomicBoolean shouldReset = new AtomicBoolean(false);
         private static final AtomicBoolean shouldSwitchCartridge =
@@ -65,12 +65,16 @@ public class MainFrame extends javax.swing.JFrame {
             final boolean isPlayerOne = netplaySocket == null || isNetplayServer;
             if (isPlayerOne)
                 nes.reset();
+            else
+                netplayReceiveMessage(isPlayerOne);
             boolean sendResetMessage = false;
             while (!Thread.currentThread().isInterrupted()) {
-                if (shouldSwitchCartridge.compareAndSet(true, false))
-                    loadROM(false);
-                if (shouldPerformNetplaySync.compareAndSet(true, false))
-                    performInitialNetplaySync();
+                if (shouldSwitchCartridge.compareAndSet(true, false)) {
+                    if (loadROM(false) && netplaySocket != null)
+                        shouldSendSerializedNES.set(true);
+                }
+                if (shouldSendSerializedNES.compareAndSet(true, false))
+                    netplaySendSerializedNES();
                 if (shouldReset.compareAndSet(true, false)) {
                     nes.reset();
                     sendResetMessage = true;
@@ -98,31 +102,32 @@ public class MainFrame extends javax.swing.JFrame {
             }
         }
 
-        private void performInitialNetplaySync() {
+        private void netplaySendSerializedNES() {
             try {
-                if (isNetplayServer) {
-                    netplaySocket.getOutputStream().write(10);
-                    (new ObjectOutputStream(netplaySocket.getOutputStream()))
-                            .writeObject(nes);
-                    while (netplaySocket.getInputStream().read() == -1) {
-
-                    }
-                } else {
-                    while (netplaySocket.getInputStream().read() == -1) {
-
-                    }
-                    nes = (NES)(new ObjectInputStream(netplaySocket.getInputStream()))
-                            .readObject();
-                    netplaySocket.getOutputStream().write(10);
-                }
-            } catch (IOException | ClassNotFoundException ex) {
-                Logger.getLogger(this.getClass().getName())
+                final DataOutputStream out =
+                        new DataOutputStream(netplaySocket.getOutputStream());
+                out.writeUTF("SYNC");
+                out.flush();
+                (new ObjectOutputStream(netplaySocket.getOutputStream()))
+                        .writeObject(nes);
+            } catch (IOException ex) {
+                Logger.getLogger(MainFrame.class.getName())
                         .log(Level.SEVERE, null, ex);
             }
         }
 
-        public static void requestInitialNetplaySync() {
-            shouldPerformNetplaySync.set(true);
+        private void netplayReceiveSerializedNES() {
+            try {
+                nes = (NES)(new ObjectInputStream(netplaySocket.getInputStream()))
+                        .readObject();
+            } catch (IOException | ClassNotFoundException ex) {
+                Logger.getLogger(MainFrame.class.getName())
+                        .log(Level.SEVERE, null, ex);
+            }
+        }
+
+        public static void requestNetplaySync() {
+            shouldSendSerializedNES.set(true);
         }
 
         public static void requestReset() {
@@ -147,17 +152,24 @@ public class MainFrame extends javax.swing.JFrame {
             out.flush();
         }
 
-        private void netplayReceiveMessage(boolean isPlayerOne) throws IOException {
+        private void netplayReceiveMessage(boolean isPlayerOne) {
             try {
                 final DataInputStream in =
                         new DataInputStream(netplaySocket.getInputStream());
                 String words[] = in.readUTF().split(" ");
-                if (words[0].equals("RESET"))
-                    NESRunnerThread.requestReset();
-                else
-                    nes.controller.processNetplayButtonStatesMessage(words[1], isPlayerOne);
+                switch (words[0]) {
+                    case "RESET" -> NESRunnerThread.requestReset();
+                    case "SYNC" -> netplayReceiveSerializedNES();
+                    default -> nes.controller
+                            .processNetplayButtonStatesMessage(words[1], isPlayerOne);
+                }
             } catch (IOException ex) {
-                netplaySocket.close();
+                try {
+                    netplaySocket.close();
+                } catch (IOException ex1) {
+                    Logger.getLogger(MainFrame.class.getName())
+                            .log(Level.SEVERE, null, ex1);
+                }
                 statusBarLabel.setText("Connection closed by " +
                         (isNetplayServer ? "client" : "server"));
                 netplaySocket = null;
@@ -178,7 +190,7 @@ public class MainFrame extends javax.swing.JFrame {
                 statusBarLabel.setText("Accepted connection from "
                     + netplaySocket.getInetAddress() + ":" + netplaySocket.getPort());
                 isNetplayServer = true;
-                NESRunnerThread.requestInitialNetplaySync();
+                NESRunnerThread.requestNetplaySync();
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(null, "Could not start netplay server " +
                         "(" + ex.getLocalizedMessage() + ").", "Netplay server error",
@@ -495,7 +507,6 @@ public class MainFrame extends javax.swing.JFrame {
             isNetplayServer = false;
             if (nes != null)
                 nesRunnerThread.interrupt();
-            NESRunnerThread.requestInitialNetplaySync();
             nesRunnerThread = new NESRunnerThread();
             nesRunnerThread.start();
         } catch (IOException ex) {
