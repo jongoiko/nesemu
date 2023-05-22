@@ -54,10 +54,10 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     private class NESRunnerThread extends Thread {
-        private static final AtomicBoolean shouldSendSerializedNES =
+        public static final AtomicBoolean shouldSendSerializedNES =
                 new AtomicBoolean(false);
-        private static final AtomicBoolean shouldReset = new AtomicBoolean(false);
-        private static final AtomicBoolean shouldSwitchCartridge =
+        public static final AtomicBoolean shouldReset = new AtomicBoolean(false);
+        public static final AtomicBoolean shouldSwitchCartridge =
                 new AtomicBoolean(false);
 
         @Override
@@ -126,18 +126,6 @@ public class MainFrame extends javax.swing.JFrame {
             }
         }
 
-        public static void requestNetplaySync() {
-            shouldSendSerializedNES.set(true);
-        }
-
-        public static void requestReset() {
-            shouldReset.set(true);
-        }
-
-        public static void requestCartridgeSwitch() {
-            shouldSwitchCartridge.set(true);
-        }
-
         private void netplaySendResetMessage() throws IOException {
             final DataOutputStream out =
                     new DataOutputStream(netplaySocket.getOutputStream());
@@ -158,7 +146,7 @@ public class MainFrame extends javax.swing.JFrame {
                         new DataInputStream(netplaySocket.getInputStream());
                 String words[] = in.readUTF().split(" ");
                 switch (words[0]) {
-                    case "RESET" -> NESRunnerThread.requestReset();
+                    case "RESET" -> shouldReset.set(true);
                     case "SYNC" -> netplayReceiveSerializedNES();
                     default -> nes.controller
                             .processNetplayButtonStatesMessage(words[1], isPlayerOne);
@@ -190,7 +178,7 @@ public class MainFrame extends javax.swing.JFrame {
                 statusBarLabel.setText("Accepted connection from "
                     + netplaySocket.getInetAddress() + ":" + netplaySocket.getPort());
                 isNetplayServer = true;
-                NESRunnerThread.requestNetplaySync();
+                NESRunnerThread.shouldSendSerializedNES.set(true);
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(null, "Could not start netplay server " +
                         "(" + ex.getLocalizedMessage() + ").", "Netplay server error",
@@ -379,7 +367,7 @@ public class MainFrame extends javax.swing.JFrame {
                 "Are you sure you want to reset the system?", "Reset",
                 JOptionPane.YES_NO_OPTION);
         if (result == JOptionPane.YES_OPTION)
-            NESRunnerThread.requestReset();
+            NESRunnerThread.shouldReset.set(true);
     }//GEN-LAST:event_resetMenuItemActionPerformed
 
     private void exitMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitMenuItemActionPerformed
@@ -394,7 +382,7 @@ public class MainFrame extends javax.swing.JFrame {
         if (nes == null)
             loadROM(true);
         else
-            NESRunnerThread.requestCartridgeSwitch();
+            NESRunnerThread.shouldSwitchCartridge.set(true);
     }//GEN-LAST:event_loadROMMenuItemActionPerformed
 
     private boolean loadROM(boolean isFirstLoadedROM) {
