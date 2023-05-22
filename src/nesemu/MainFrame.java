@@ -4,12 +4,14 @@ import java.io.IOException;
 import javax.swing.UIManager;
 import com.formdev.flatlaf.FlatDarkLaf;
 import java.awt.Color;
+import java.awt.GridLayout;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.text.NumberFormat;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -17,11 +19,18 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import javax.swing.JFormattedTextField;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.text.NumberFormatter;
 
 public class MainFrame extends javax.swing.JFrame {
     private static final int TARGET_FPS = 60;
     private static final int NANOSECS_PER_FRAME = (int)((1.0 / TARGET_FPS) * 1000000000);
-    private static final int NETPLAY_PORT = 6502;
+
+    private static final String NETPLAY_DEFAULT_HOST = "localhost";
+    private static final int NETPLAY_DEFAULT_PORT = 6502;
 
     private NES nes;
     private NESRunnerThread nesRunnerThread;
@@ -156,7 +165,7 @@ public class MainFrame extends javax.swing.JFrame {
             statusBarLabel.setText("Netplay server started; waiting for connections");
             final ServerSocket serverSocket;
             try {
-                serverSocket = new ServerSocket(NETPLAY_PORT);
+                serverSocket = new ServerSocket(NETPLAY_DEFAULT_PORT);
                 Socket clientSocket = serverSocket.accept();
                 statusBarLabel.setText("Accepted connection from "
                     + clientSocket.getInetAddress() + ":" + clientSocket.getPort());
@@ -422,17 +431,53 @@ public class MainFrame extends javax.swing.JFrame {
         netplaySocket = null;
     }//GEN-LAST:event_stopServerMenuItemActionPerformed
 
+    private class HostnamePortInputPanel extends JPanel {
+        private final JTextField hostnameField;
+        private final JFormattedTextField portNumberField;
+
+        public HostnamePortInputPanel() {
+            NumberFormat format = NumberFormat.getInstance();
+            format.setGroupingUsed(false);
+            NumberFormatter formatter = new NumberFormatter(format);
+            formatter.setMinimum(0);
+            formatter.setMaximum(Integer.MAX_VALUE);
+            formatter.setValueClass(Integer.class);
+            formatter.setAllowsInvalid(true);
+            GridLayout layout = new GridLayout(2, 2);
+            layout.setHgap(20);
+            layout.setVgap(10);
+            setLayout(layout);
+            add(new JLabel("Server's hostname or IP address:"));
+            hostnameField = new JTextField(NETPLAY_DEFAULT_HOST);
+            add(hostnameField);
+            add(new JLabel("Port number:"));
+            portNumberField = new JFormattedTextField(formatter);
+            portNumberField.setValue(NETPLAY_DEFAULT_PORT);
+            add(portNumberField);
+        }
+
+        public String getHostname() {
+            return hostnameField.getText();
+        }
+
+        public int getPortNumber() {
+            return Integer.parseInt(portNumberField.getText());
+        }
+    }
+
     private void connectToServerMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectToServerMenuItemActionPerformed
-        String host = (String)JOptionPane.showInputDialog(null,
-                "Input the server's hostname or IP address:",
-                "Netplay server address", JOptionPane.QUESTION_MESSAGE,
-                null, null, "localhost");
-        if (host == null)
+        HostnamePortInputPanel inputPanel = new HostnamePortInputPanel();
+        int result = JOptionPane.showConfirmDialog(null, inputPanel,
+                "Netplay server connection", JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
+        if (result != JOptionPane.OK_OPTION)
             return;
+        String hostname = inputPanel.getHostname();
+        int portNumber = inputPanel.getPortNumber();
         if (netplayServerThread != null && netplayServerThread.isAlive())
             netplayServerThread.interrupt();
         try {
-            netplaySocket = new Socket(host, NETPLAY_PORT);
+            netplaySocket = new Socket(hostname, portNumber);
             statusBarLabel.setText("Successfully connected to server");
             loadROMMenuItem.setEnabled(false);
             resetMenuItem.setEnabled(false);
