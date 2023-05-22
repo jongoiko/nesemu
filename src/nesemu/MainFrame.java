@@ -134,14 +134,14 @@ public class MainFrame extends javax.swing.JFrame {
         }
 
         private void netplaySendResetMessage() throws IOException {
-            DataOutputStream out =
+            final DataOutputStream out =
                     new DataOutputStream(netplaySocket.getOutputStream());
             out.writeUTF("RESET");
             out.flush();
         }
 
         private void netplaySendButtonStates(boolean isPlayerOne) throws IOException {
-            DataOutputStream out =
+            final DataOutputStream out =
                     new DataOutputStream(netplaySocket.getOutputStream());
             out.writeUTF("BUTTONS " + nes.controller.getNetplayButtonStatesMessage(isPlayerOne));
             out.flush();
