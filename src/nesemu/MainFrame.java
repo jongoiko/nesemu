@@ -510,6 +510,7 @@ public class MainFrame extends javax.swing.JFrame {
             return;
         try {
             netplaySocket.close();
+            netplaySocket = null;
             statusBarLabel.setText("Disconnected from server");
             loadROMMenuItem.setEnabled(true);
             resetMenuItem.setEnabled(true);
