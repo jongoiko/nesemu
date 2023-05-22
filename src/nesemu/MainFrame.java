@@ -166,10 +166,9 @@ public class MainFrame extends javax.swing.JFrame {
             final ServerSocket serverSocket;
             try {
                 serverSocket = new ServerSocket(NETPLAY_DEFAULT_PORT);
-                Socket clientSocket = serverSocket.accept();
+                netplaySocket = serverSocket.accept();
                 statusBarLabel.setText("Accepted connection from "
-                    + clientSocket.getInetAddress() + ":" + clientSocket.getPort());
-                netplaySocket = clientSocket;
+                    + netplaySocket.getInetAddress() + ":" + netplaySocket.getPort());
                 isNetplayServer = true;
                 NESRunnerThread.requestInitialNetplaySync();
             } catch (IOException ex) {
