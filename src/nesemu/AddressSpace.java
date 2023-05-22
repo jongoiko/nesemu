@@ -5,9 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /* The NES is made up of many different components (CPU, PPU, game cartridge,
- * controllers, system memory, etc.) and they are connected via an address space.
- * A device connected to an address space may be written to or read from by any
- * other device in the address space. See https://www.nesdev.org/wiki/CPU_memory_map
+ * controllers, system memory, etc.). The interconnection between such components
+ * is handled by this class, such that a device connected to an address space may
+ * be written to or read from by any other device in the address space.
+ * See https://www.nesdev.org/wiki/CPU_memory_map
  *
  * Note that some memory locations and ports may be accessed from more than one
  * memory address, depending on the way the 16-bit addresses are decoded within
