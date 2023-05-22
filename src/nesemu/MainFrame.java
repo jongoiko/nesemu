@@ -57,6 +57,8 @@ public class MainFrame extends javax.swing.JFrame {
         private static final AtomicBoolean shouldPerformNetplaySync =
                 new AtomicBoolean(false);
         private static final AtomicBoolean shouldReset = new AtomicBoolean(false);
+        private static final AtomicBoolean shouldSwitchCartridge =
+                new AtomicBoolean(false);
 
         @Override
         public synchronized void run() {
@@ -65,6 +67,8 @@ public class MainFrame extends javax.swing.JFrame {
                 nes.reset();
             boolean sendResetMessage = false;
             while (!Thread.currentThread().isInterrupted()) {
+                if (shouldSwitchCartridge.compareAndSet(true, false))
+                    loadROM(false);
                 if (shouldPerformNetplaySync.compareAndSet(true, false))
                     performInitialNetplaySync();
                 if (shouldReset.compareAndSet(true, false)) {
@@ -123,6 +127,10 @@ public class MainFrame extends javax.swing.JFrame {
 
         public static void requestReset() {
             shouldReset.set(true);
+        }
+
+        public static void requestCartridgeSwitch() {
+            shouldSwitchCartridge.set(true);
         }
 
         private void netplaySendResetMessage() throws IOException {
@@ -371,27 +379,31 @@ public class MainFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_exitMenuItemActionPerformed
 
     private void loadROMMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loadROMMenuItemActionPerformed
+        if (nes == null)
+            loadROM(true);
+        else
+            NESRunnerThread.requestCartridgeSwitch();
+    }//GEN-LAST:event_loadROMMenuItemActionPerformed
+
+    private boolean loadROM(boolean isFirstLoadedROM) {
         JFileChooser fileChooser = new JFileChooser();
         FileNameExtensionFilter filter = new FileNameExtensionFilter(
                 "iNES cartridge files (.nes)", "nes");
         fileChooser.setFileFilter(filter);
         int result = fileChooser.showOpenDialog(null);
         if (result != JFileChooser.APPROVE_OPTION)
-            return;
+            return false;
         String fileName = fileChooser.getSelectedFile().getName();
         String filePath = fileChooser.getSelectedFile().getAbsolutePath();
         try {
-            if (nes == null) {
+            if (isFirstLoadedROM) {
                 nesRunnerThread = new NESRunnerThread();
                 nes = new NES(filePath);
                 nesRunnerThread.start();
-            } else {
-                nesRunnerThread.interrupt();
+            } else
                 nes.exchangeCartridge(filePath);
-                nesRunnerThread = new NESRunnerThread();
-                nesRunnerThread.start();
-            }
             statusBarLabel.setText("Running \"" + nes.cartridge.getName() + "\"");
+            return true;
         } catch (IOException ex) {
             Logger.getLogger(this.getClass().getName())
                     .log(Level.SEVERE, null, ex);
@@ -405,7 +417,8 @@ public class MainFrame extends javax.swing.JFrame {
                     "\" is not a valid cartridge file.", "Invalid cartridge file",
                     JOptionPane.ERROR_MESSAGE);
         }
-    }//GEN-LAST:event_loadROMMenuItemActionPerformed
+        return false;
+    }
 
     private void startServerMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startServerMenuItemActionPerformed
         netplayServerThread = new NetplayServerThread();
