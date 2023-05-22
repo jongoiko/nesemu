@@ -72,13 +72,13 @@ public class Mapper001Cartridge extends Cartridge {
     }
 
     @Override
-    byte readPrgRAMByte(short address) {
+    public byte readPrgRAMByte(short address) {
         return prgRAM[(prgRAMBankSelect * PRG_RAM_BANK_SIZE +
                 Short.toUnsignedInt(address) % PRG_RAM_BANK_SIZE) % prgRAM.length];
     }
 
     @Override
-    void writePrgRAMByte(short address, byte value) {
+    public void writePrgRAMByte(short address, byte value) {
         prgRAM[(prgRAMBankSelect * PRG_RAM_BANK_SIZE +
                 Short.toUnsignedInt(address) % PRG_RAM_BANK_SIZE) % prgRAM.length] = value;
     }

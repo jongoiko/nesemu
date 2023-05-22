@@ -572,12 +572,12 @@ public class PPU extends MemoryMapped {
     }
 
     @Override
-    boolean addressIsMapped(short address) {
+    public boolean addressIsMapped(short address) {
         return address >= 0x2000 && address <= 0x3FFF;
     }
 
     @Override
-    byte readByteFromDevice(short address) {
+    public byte readByteFromDevice(short address) {
         switch (address & 7) {
             case 2 -> {
                 byte value = regPPUSTATUS.toByte();
@@ -598,7 +598,7 @@ public class PPU extends MemoryMapped {
     }
 
     @Override
-    void writeByteToDevice(short address, byte value) {
+    public void writeByteToDevice(short address, byte value) {
         switch (address & 7) {
             case 0 -> {
                 tempVramAddress &= ~0xC00;

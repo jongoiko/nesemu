@@ -70,12 +70,12 @@ public class Controller extends MemoryMapped {
     }
 
     @Override
-    boolean addressIsMapped(short address) {
+    public boolean addressIsMapped(short address) {
         return address == 0x4016 || address == 0x4017;
     }
 
     @Override
-    byte readByteFromDevice(short address) {
+    public byte readByteFromDevice(short address) {
         int bit;
         if (address == 0x4016) {
             bit = playerOneBuffer & 1;
@@ -90,7 +90,7 @@ public class Controller extends MemoryMapped {
     }
 
     @Override
-    void writeByteToDevice(short address, byte value) {
+    public void writeByteToDevice(short address, byte value) {
         boolean prevPoll = poll;
         if (address == 0x4016) {
             poll = (value & 1) != 0;

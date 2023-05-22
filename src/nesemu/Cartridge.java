@@ -22,14 +22,14 @@ public abstract class Cartridge extends MemoryMapped {
     private final static int PRG_ROM_BLOCK_SIZE = 16384;
     private final static int CHR_ROM_BLOCK_SIZE = 8192;
 
-    final byte prgROM[];
-    final byte chrROM[];
-    byte prgRAM[];
+    public final byte prgROM[];
+    public final byte chrROM[];
+    public byte prgRAM[];
 
     public Mirroring mirroring;
 
-    boolean hasPrgRAM;
-    boolean hasChrRAM;
+    public boolean hasPrgRAM;
+    public boolean hasChrRAM;
 
     /* Although the PPU's address space can fit 4 nametables, usually only two
      * could be stored in memory. Thus, a mirroring scheme was necessary, such
@@ -62,12 +62,12 @@ public abstract class Cartridge extends MemoryMapped {
     abstract void writePrgROMByte(short address, byte value);
 
     @Override
-    boolean addressIsMapped(short address) {
+    public boolean addressIsMapped(short address) {
         return Short.toUnsignedInt(address) >= 0x4020;
     }
 
     @Override
-    byte readByteFromDevice(short address) {
+    public byte readByteFromDevice(short address) {
         int intAddress = Short.toUnsignedInt(address);
         if (hasPrgRAM && intAddress >= 0x6000 && intAddress < 0x8000)
             return readPrgRAMByte(address);
@@ -75,7 +75,7 @@ public abstract class Cartridge extends MemoryMapped {
     }
 
     @Override
-    void writeByteToDevice(short address, byte value) {
+    public void writeByteToDevice(short address, byte value) {
         int intAddress = Short.toUnsignedInt(address);
         if (hasPrgRAM && intAddress >= 0x6000 && intAddress < 0x8000)
             writePrgRAMByte(address, value);
@@ -83,11 +83,11 @@ public abstract class Cartridge extends MemoryMapped {
             writePrgROMByte(address, value);
     }
 
-    byte readPrgRAMByte(short address) {
+    public byte readPrgRAMByte(short address) {
         return prgRAM[Short.toUnsignedInt(address) % prgRAM.length];
     }
 
-    void writePrgRAMByte(short address, byte value) {
+    public void writePrgRAMByte(short address, byte value) {
         prgRAM[Short.toUnsignedInt(address) % prgRAM.length] = value;
     }
 

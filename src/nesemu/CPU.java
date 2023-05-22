@@ -59,7 +59,7 @@ public class CPU extends MemoryMapped {
     }
 
     @Override
-    boolean addressIsMapped(short address) {
+    public boolean addressIsMapped(short address) {
         /* Writes to OAMDMA (https://www.nesdev.org/wiki/PPU_registers#OAMDMA)
          * are "caught" by the processor itself. When a byte is written to this
          * address, a DMA transfer begins, which will suspend the CPU for 513 or
@@ -69,12 +69,12 @@ public class CPU extends MemoryMapped {
     }
 
     @Override
-    byte readByteFromDevice(short address) {
+    public byte readByteFromDevice(short address) {
         return 0;
     }
 
     @Override
-    void writeByteToDevice(short address, byte value) {
+    public void writeByteToDevice(short address, byte value) {
         regOAMDMA = value;
         dmaCyclesLeft = cycleCount % 2 == 0 ? 513 : 514;
     }
