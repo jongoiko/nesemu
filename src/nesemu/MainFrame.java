@@ -41,7 +41,7 @@ public class MainFrame extends javax.swing.JFrame {
     private boolean isNetplayServer;
     private NetplayServerThread netplayServerThread;
 
-    private final ScreenPanel panel;
+    private final ScreenPanel screenPanel;
 
     public MainFrame() {
         try {
@@ -50,9 +50,9 @@ public class MainFrame extends javax.swing.JFrame {
             System.err.println("Failed to initialize theme; using fallback");
         }
         nes = null;
-        panel = new ScreenPanel();
+        screenPanel = new ScreenPanel();
         initComponents();
-        panel.init();
+        screenPanel.init();
     }
 
     /* NESRunnerThread runs the emulator and, when a netplay connection is active
@@ -116,7 +116,7 @@ public class MainFrame extends javax.swing.JFrame {
                         showConnectionClosedMessage();
                     }
                 }
-                nes.runUntilFrameReady(panel.img);
+                nes.runUntilFrameReady(screenPanel.img);
                 repaint();
                 do {
                     frameEndTime = System.nanoTime();
@@ -230,7 +230,7 @@ public class MainFrame extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jPanel1 = panel;
+        jPanel1 = screenPanel;
         statusBarLabel = new javax.swing.JLabel();
         menuBar = new javax.swing.JMenuBar();
         systemMenu = new javax.swing.JMenu();
