@@ -237,7 +237,6 @@ public class MainFrame extends javax.swing.JFrame {
         loadROMMenuItem = new javax.swing.JMenuItem();
         resetMenuItem = new javax.swing.JMenuItem();
         exitMenuItem = new javax.swing.JMenuItem();
-        settingsMenu = new javax.swing.JMenu();
         helpMenu = new javax.swing.JMenu();
         emulatorHelpMenuItem = new javax.swing.JMenuItem();
         netplayHelpMenuItem = new javax.swing.JMenuItem();
@@ -307,9 +306,6 @@ public class MainFrame extends javax.swing.JFrame {
         systemMenu.add(exitMenuItem);
 
         menuBar.add(systemMenu);
-
-        settingsMenu.setText("Settings");
-        menuBar.add(settingsMenu);
 
         helpMenu.setText("Help");
 
@@ -634,7 +630,6 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JMenuItem netplayHelpMenuItem;
     private javax.swing.JMenu netplayMenu;
     private javax.swing.JMenuItem resetMenuItem;
-    private javax.swing.JMenu settingsMenu;
     private javax.swing.JMenuItem startServerMenuItem;
     private javax.swing.JLabel statusBarLabel;
     private javax.swing.JMenuItem stopServerMenuItem;
