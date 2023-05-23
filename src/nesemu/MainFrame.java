@@ -168,7 +168,7 @@ public class MainFrame extends javax.swing.JFrame {
                 do {
                     String words[] = in.readUTF().split(" ");
                     switch (words[0]) {
-                        case "RESET" -> shouldReset.set(true);
+                        case "RESET" -> nes.reset();
                         case "SYNC" -> netplayReceiveSerializedNES();
                         default -> {
                             nes.controller
