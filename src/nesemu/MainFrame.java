@@ -481,7 +481,7 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     private void startServerMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startServerMenuItemActionPerformed
-        HostnamePortInputPanel inputPanel = new HostnamePortInputPanel(true);
+        HostnameAndPortInputPanel inputPanel = new HostnameAndPortInputPanel(true);
         int result = JOptionPane.showConfirmDialog(null, inputPanel,
                 "Start netplay server", JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.QUESTION_MESSAGE);
@@ -508,11 +508,11 @@ public class MainFrame extends javax.swing.JFrame {
             }
     }//GEN-LAST:event_stopServerMenuItemActionPerformed
 
-    private class HostnamePortInputPanel extends JPanel {
+    private class HostnameAndPortInputPanel extends JPanel {
         private final JTextField hostnameField;
         private final JFormattedTextField portNumberField;
 
-        public HostnamePortInputPanel(boolean portNumberOnly) {
+        public HostnameAndPortInputPanel(boolean portNumberOnly) {
             NumberFormat format = NumberFormat.getInstance();
             format.setGroupingUsed(false);
             NumberFormatter formatter = new NumberFormatter(format);
@@ -545,7 +545,7 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     private void connectToServerMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectToServerMenuItemActionPerformed
-        HostnamePortInputPanel inputPanel = new HostnamePortInputPanel(false);
+        HostnameAndPortInputPanel inputPanel = new HostnameAndPortInputPanel(false);
         int result = JOptionPane.showConfirmDialog(null, inputPanel,
                 "Netplay server connection", JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.QUESTION_MESSAGE);
