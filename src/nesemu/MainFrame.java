@@ -86,7 +86,7 @@ public class MainFrame extends javax.swing.JFrame {
             if (isPlayerOne)
                 nes.reset();
             else
-                netplayReceiveMessage(isPlayerOne);
+                netplayReceiveMessage(isPlayerOne, false);
             boolean sendResetMessage = false;
             while (!Thread.currentThread().isInterrupted()) {
                 if (shouldSwitchCartridge.compareAndSet(true, false)) {
@@ -106,9 +106,9 @@ public class MainFrame extends javax.swing.JFrame {
                         if (sendResetMessage && isNetplayServer) {
                             netplaySendResetMessage();
                             sendResetMessage = false;
-                        } else
-                            netplaySendButtonStates(isPlayerOne);
-                        netplayReceiveMessage(isPlayerOne);
+                        }
+                        netplaySendButtonStates(isPlayerOne);
+                        netplayReceiveMessage(isPlayerOne, true);
                     } catch (IOException ex) {
                         showConnectionClosedMessage();
                     }
@@ -159,17 +159,24 @@ public class MainFrame extends javax.swing.JFrame {
             out.flush();
         }
 
-        private void netplayReceiveMessage(boolean isPlayerOne) {
+        private void netplayReceiveMessage(boolean isPlayerOne,
+                boolean waitForButtonStatesMessage) {
             try {
                 final DataInputStream in =
                         new DataInputStream(netplaySocket.getInputStream());
-                String words[] = in.readUTF().split(" ");
-                switch (words[0]) {
-                    case "RESET" -> shouldReset.set(true);
-                    case "SYNC" -> netplayReceiveSerializedNES();
-                    default -> nes.controller
-                            .processNetplayButtonStatesMessage(words[1], isPlayerOne);
-                }
+                boolean buttonsMessageReceived = false;
+                do {
+                    String words[] = in.readUTF().split(" ");
+                    switch (words[0]) {
+                        case "RESET" -> shouldReset.set(true);
+                        case "SYNC" -> netplayReceiveSerializedNES();
+                        default -> {
+                            nes.controller
+                                    .processNetplayButtonStatesMessage(words[1], isPlayerOne);
+                            buttonsMessageReceived = true;
+                        }
+                    }
+                } while (!buttonsMessageReceived && waitForButtonStatesMessage);
             } catch (IOException ex) {
                 showConnectionClosedMessage();
             }
