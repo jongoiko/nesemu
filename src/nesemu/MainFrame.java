@@ -233,15 +233,15 @@ public class MainFrame extends javax.swing.JFrame {
         jPanel1 = panel;
         statusBarLabel = new javax.swing.JLabel();
         menuBar = new javax.swing.JMenuBar();
-        jMenu3 = new javax.swing.JMenu();
+        systemMenu = new javax.swing.JMenu();
         loadROMMenuItem = new javax.swing.JMenuItem();
         resetMenuItem = new javax.swing.JMenuItem();
         exitMenuItem = new javax.swing.JMenuItem();
-        jMenu4 = new javax.swing.JMenu();
-        HelpMenu = new javax.swing.JMenu();
+        settingsMenu = new javax.swing.JMenu();
+        helpMenu = new javax.swing.JMenu();
         emulatorHelpMenuItem = new javax.swing.JMenuItem();
         netplayHelpMenuItem = new javax.swing.JMenuItem();
-        jMenu2 = new javax.swing.JMenu();
+        netplayMenu = new javax.swing.JMenu();
         jMenu5 = new javax.swing.JMenu();
         startServerMenuItem = new javax.swing.JMenuItem();
         stopServerMenuItem = new javax.swing.JMenuItem();
@@ -277,7 +277,7 @@ public class MainFrame extends javax.swing.JFrame {
 
         menuBar.setFont(new java.awt.Font("Fira Code Medium", 0, 13)); // NOI18N
 
-        jMenu3.setText("System");
+        systemMenu.setText("System");
 
         loadROMMenuItem.setFont(new java.awt.Font("Fira Code", 0, 13)); // NOI18N
         loadROMMenuItem.setText("Load ROM");
@@ -286,7 +286,7 @@ public class MainFrame extends javax.swing.JFrame {
                 loadROMMenuItemActionPerformed(evt);
             }
         });
-        jMenu3.add(loadROMMenuItem);
+        systemMenu.add(loadROMMenuItem);
 
         resetMenuItem.setFont(new java.awt.Font("Fira Code", 0, 13)); // NOI18N
         resetMenuItem.setText("Reset");
@@ -295,7 +295,7 @@ public class MainFrame extends javax.swing.JFrame {
                 resetMenuItemActionPerformed(evt);
             }
         });
-        jMenu3.add(resetMenuItem);
+        systemMenu.add(resetMenuItem);
 
         exitMenuItem.setFont(new java.awt.Font("Fira Code", 0, 13)); // NOI18N
         exitMenuItem.setText("Exit");
@@ -304,14 +304,14 @@ public class MainFrame extends javax.swing.JFrame {
                 exitMenuItemActionPerformed(evt);
             }
         });
-        jMenu3.add(exitMenuItem);
+        systemMenu.add(exitMenuItem);
 
-        menuBar.add(jMenu3);
+        menuBar.add(systemMenu);
 
-        jMenu4.setText("Settings");
-        menuBar.add(jMenu4);
+        settingsMenu.setText("Settings");
+        menuBar.add(settingsMenu);
 
-        HelpMenu.setText("Help");
+        helpMenu.setText("Help");
 
         emulatorHelpMenuItem.setFont(new java.awt.Font("Fira Code", 0, 13)); // NOI18N
         emulatorHelpMenuItem.setText("Emulator");
@@ -320,7 +320,7 @@ public class MainFrame extends javax.swing.JFrame {
                 emulatorHelpMenuItemActionPerformed(evt);
             }
         });
-        HelpMenu.add(emulatorHelpMenuItem);
+        helpMenu.add(emulatorHelpMenuItem);
 
         netplayHelpMenuItem.setFont(new java.awt.Font("Fira Code", 0, 13)); // NOI18N
         netplayHelpMenuItem.setText("Netplay");
@@ -329,11 +329,11 @@ public class MainFrame extends javax.swing.JFrame {
                 netplayHelpMenuItemActionPerformed(evt);
             }
         });
-        HelpMenu.add(netplayHelpMenuItem);
+        helpMenu.add(netplayHelpMenuItem);
 
-        menuBar.add(HelpMenu);
+        menuBar.add(helpMenu);
 
-        jMenu2.setText("Netplay");
+        netplayMenu.setText("Netplay");
 
         jMenu5.setText("Local server");
         jMenu5.setFont(new java.awt.Font("Fira Code", 0, 13)); // NOI18N
@@ -356,7 +356,7 @@ public class MainFrame extends javax.swing.JFrame {
         });
         jMenu5.add(stopServerMenuItem);
 
-        jMenu2.add(jMenu5);
+        netplayMenu.add(jMenu5);
 
         connectToServerMenuItem.setFont(new java.awt.Font("Fira Code", 0, 13)); // NOI18N
         connectToServerMenuItem.setText("Connect to server");
@@ -365,7 +365,7 @@ public class MainFrame extends javax.swing.JFrame {
                 connectToServerMenuItemActionPerformed(evt);
             }
         });
-        jMenu2.add(connectToServerMenuItem);
+        netplayMenu.add(connectToServerMenuItem);
 
         disconnectFromServerMenuItem.setFont(new java.awt.Font("Fira Code", 0, 13)); // NOI18N
         disconnectFromServerMenuItem.setText("Disconnect from server");
@@ -374,9 +374,9 @@ public class MainFrame extends javax.swing.JFrame {
                 disconnectFromServerMenuItemActionPerformed(evt);
             }
         });
-        jMenu2.add(disconnectFromServerMenuItem);
+        netplayMenu.add(disconnectFromServerMenuItem);
 
-        menuBar.add(jMenu2);
+        menuBar.add(netplayMenu);
 
         setJMenuBar(menuBar);
 
@@ -622,22 +622,22 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JMenu HelpMenu;
     private javax.swing.JMenuItem connectToServerMenuItem;
     private javax.swing.JMenuItem disconnectFromServerMenuItem;
     private javax.swing.JMenuItem emulatorHelpMenuItem;
     private javax.swing.JMenuItem exitMenuItem;
-    private javax.swing.JMenu jMenu2;
-    private javax.swing.JMenu jMenu3;
-    private javax.swing.JMenu jMenu4;
+    private javax.swing.JMenu helpMenu;
     private javax.swing.JMenu jMenu5;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JMenuItem loadROMMenuItem;
     private javax.swing.JMenuBar menuBar;
     private javax.swing.JMenuItem netplayHelpMenuItem;
+    private javax.swing.JMenu netplayMenu;
     private javax.swing.JMenuItem resetMenuItem;
+    private javax.swing.JMenu settingsMenu;
     private javax.swing.JMenuItem startServerMenuItem;
     private javax.swing.JLabel statusBarLabel;
     private javax.swing.JMenuItem stopServerMenuItem;
+    private javax.swing.JMenu systemMenu;
     // End of variables declaration//GEN-END:variables
 }
