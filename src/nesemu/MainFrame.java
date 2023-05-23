@@ -85,8 +85,11 @@ public class MainFrame extends javax.swing.JFrame {
             final boolean isPlayerOne = netplaySocket == null || isNetplayServer;
             if (isPlayerOne)
                 nes.reset();
-            else
+            else {
                 netplayReceiveMessage(isPlayerOne, false);
+                if (nes == null)
+                    return;
+            }
             boolean sendResetMessage = false;
             while (!Thread.currentThread().isInterrupted()) {
                 if (shouldSwitchCartridge.compareAndSet(true, false)) {
