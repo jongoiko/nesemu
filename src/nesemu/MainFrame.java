@@ -185,9 +185,9 @@ public class MainFrame extends javax.swing.JFrame {
         private void showConnectionClosedMessage() {
             try {
                 netplaySocket.close();
-            } catch (IOException ex1) {
+            } catch (IOException ex) {
                 Logger.getLogger(MainFrame.class.getName())
-                        .log(Level.SEVERE, null, ex1);
+                        .log(Level.SEVERE, null, ex);
             }
             statusBarLabel.setText("Connection closed by " +
                     (isNetplayServer ? "client" : "server"));
