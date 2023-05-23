@@ -201,12 +201,18 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     private class NetplayServerThread extends Thread {
+        int portNumber;
+
+        public NetplayServerThread(int portNumber) {
+            this.portNumber = portNumber;
+        }
+
         @Override
         public void run() {
             statusBarLabel.setText("Netplay server started; waiting for connections");
             final ServerSocket serverSocket;
             try {
-                serverSocket = new ServerSocket(NETPLAY_DEFAULT_PORT);
+                serverSocket = new ServerSocket(portNumber);
                 netplaySocket = serverSocket.accept();
                 statusBarLabel.setText("Accepted connection from "
                     + netplaySocket.getInetAddress() + ":" + netplaySocket.getPort());
@@ -475,7 +481,13 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     private void startServerMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startServerMenuItemActionPerformed
-        netplayServerThread = new NetplayServerThread();
+        HostnamePortInputPanel inputPanel = new HostnamePortInputPanel(true);
+        int result = JOptionPane.showConfirmDialog(null, inputPanel,
+                "Start netplay server", JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
+        if (result != JOptionPane.OK_OPTION)
+            return;
+        netplayServerThread = new NetplayServerThread(inputPanel.getPortNumber());
         netplayServerThread.start();
     }//GEN-LAST:event_startServerMenuItemActionPerformed
 
@@ -500,7 +512,7 @@ public class MainFrame extends javax.swing.JFrame {
         private final JTextField hostnameField;
         private final JFormattedTextField portNumberField;
 
-        public HostnamePortInputPanel() {
+        public HostnamePortInputPanel(boolean portNumberOnly) {
             NumberFormat format = NumberFormat.getInstance();
             format.setGroupingUsed(false);
             NumberFormatter formatter = new NumberFormatter(format);
@@ -508,17 +520,19 @@ public class MainFrame extends javax.swing.JFrame {
             formatter.setMaximum(Integer.MAX_VALUE);
             formatter.setValueClass(Integer.class);
             formatter.setAllowsInvalid(true);
-            GridLayout layout = new GridLayout(2, 2);
+            GridLayout layout = new GridLayout(portNumberOnly ? 1 : 2, 2);
             layout.setHgap(20);
             layout.setVgap(10);
             setLayout(layout);
-            add(new JLabel("Server's hostname or IP address:"));
-            hostnameField = new JTextField(NETPLAY_DEFAULT_HOST);
-            add(hostnameField);
             add(new JLabel("Port number:"));
             portNumberField = new JFormattedTextField(formatter);
             portNumberField.setValue(NETPLAY_DEFAULT_PORT);
             add(portNumberField);
+            hostnameField = new JTextField(NETPLAY_DEFAULT_HOST);
+            if (portNumberOnly)
+                return;
+            add(new JLabel("Server's hostname or IP address:"));
+            add(hostnameField);
         }
 
         public String getHostname() {
@@ -531,7 +545,7 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     private void connectToServerMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectToServerMenuItemActionPerformed
-        HostnamePortInputPanel inputPanel = new HostnamePortInputPanel();
+        HostnamePortInputPanel inputPanel = new HostnamePortInputPanel(false);
         int result = JOptionPane.showConfirmDialog(null, inputPanel,
                 "Netplay server connection", JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.QUESTION_MESSAGE);
