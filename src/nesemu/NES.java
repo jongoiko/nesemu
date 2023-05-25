@@ -43,9 +43,8 @@ public class NES implements Serializable {
         reset();
     }
 
-    /* The PPU's clock runs at three times the speed of the CPU's clock. See
-     * https://www.nesdev.org/wiki/Cycle_reference_chart
-     */
+    // The PPU's clock runs at three times the speed of the CPU's clock. See
+    // https://www.nesdev.org/wiki/Cycle_reference_chart
     public void runUntilFrameReady(BufferedImage img) {
         while (!ppu.isFrameReady) {
             ppu.clockTick(img, cpu);
