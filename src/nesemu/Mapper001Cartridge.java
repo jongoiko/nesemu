@@ -41,16 +41,17 @@ public class Mapper001Cartridge extends Cartridge {
     public byte readPrgROMByte(short address) {
         int mappedAddress = Short.toUnsignedInt(address), baseAddress = 0;
         switch (prgBankMode) {
-            case FIX_16KB_FIRST_HALF ->
-                baseAddress = mappedAddress >= 0xC000 ? prgROMBankSelect * PRG_ROM_BANK_SIZE : 0;
-            case FIX_16KB_SECOND_HALF ->
-                baseAddress = (mappedAddress >= 0xC000 ? 0xF : prgROMBankSelect) * PRG_ROM_BANK_SIZE;
-            case SWITCH_32KB ->
-                baseAddress = (prgROMBankSelect >>> 1) * 2 * PRG_ROM_BANK_SIZE;
+            case FIX_16KB_FIRST_HALF -> baseAddress = mappedAddress >= 0xC000 ?
+                    prgROMBankSelect * PRG_ROM_BANK_SIZE : 0;
+            case FIX_16KB_SECOND_HALF -> baseAddress = (mappedAddress >= 0xC000 ?
+                    0xF : prgROMBankSelect) * PRG_ROM_BANK_SIZE;
+            case SWITCH_32KB -> baseAddress = (prgROMBankSelect >>> 1)
+                    * 2 * PRG_ROM_BANK_SIZE;
         }
         if (upper256KBank)
             baseAddress += 262144;
-        return prgROM[(baseAddress + (mappedAddress % PRG_ROM_BANK_SIZE)) % prgROM.length];
+        return prgROM[(baseAddress + (mappedAddress % PRG_ROM_BANK_SIZE))
+                % prgROM.length];
     }
 
     @Override
@@ -80,7 +81,7 @@ public class Mapper001Cartridge extends Cartridge {
     @Override
     public void writePrgRAMByte(short address, byte value) {
         prgRAM[(prgRAMBankSelect * PRG_RAM_BANK_SIZE +
-                Short.toUnsignedInt(address) % PRG_RAM_BANK_SIZE) % prgRAM.length] = value;
+                Short.toUnsignedInt(address) % PRG_RAM_BANK_SIZE)% prgRAM.length] = value;
     }
 
     @Override
