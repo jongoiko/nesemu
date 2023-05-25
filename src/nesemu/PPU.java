@@ -19,6 +19,7 @@ public class PPU extends MemoryMapped {
     private final static int NAMETABLE_SIZE = 1024;
     private final static int OAM_SIZE = 256;
     private final static int NUM_COLORS = 64;
+    private final static int MAX_SPRITES_PER_SCANLINE = 8;
 
     // The palette file was produced using Bisqwit's tool at
     // https://bisqwit.iki.fi/utils/nespalette.php
@@ -76,10 +77,10 @@ public class PPU extends MemoryMapped {
         nametableMemory = new byte[4][NAMETABLE_SIZE];
         oamMemory = new byte[OAM_SIZE];
         secondaryOamMemory = new byte[OAM_SIZE / 8];
-        spritePatternLowByteShiftRegisters = new byte[8];
-        spritePatternHighByteShiftRegisters = new byte[8];
-        spriteAttributes = new byte[8];
-        spriteXPositions = new byte[8];
+        spritePatternLowByteShiftRegisters = new byte[MAX_SPRITES_PER_SCANLINE];
+        spritePatternHighByteShiftRegisters = new byte[MAX_SPRITES_PER_SCANLINE];
+        spriteAttributes = new byte[MAX_SPRITES_PER_SCANLINE];
+        spriteXPositions = new byte[MAX_SPRITES_PER_SCANLINE];
         regPPUCTRL = new PPUCTRL();
         regPPUMASK = new PPUMASK();
         regPPUSTATUS = new PPUSTATUS();
@@ -277,7 +278,7 @@ public class PPU extends MemoryMapped {
     }
 
     private void shiftSpriteShiftRegisters() {
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < MAX_SPRITES_PER_SCANLINE; i++) {
             if (spriteXPositions[i] == 0) {
                 spritePatternLowByteShiftRegisters[i] <<= 1;
                 spritePatternHighByteShiftRegisters[i] <<= 1;
@@ -393,7 +394,7 @@ public class PPU extends MemoryMapped {
 
     private Integer getSpritePixelColorCode() {
         renderingSpriteZero = false;
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < MAX_SPRITES_PER_SCANLINE; i++) {
             int xPosition = spriteXPositions[i];
             if (xPosition == 0) {
                 byte lowByte = spritePatternLowByteShiftRegisters[i];
@@ -453,7 +454,7 @@ public class PPU extends MemoryMapped {
 
     void readSpriteData() {
         isSpriteZeroInScanline = isSpriteZeroLoadedToSecondaryOam;
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < MAX_SPRITES_PER_SCANLINE; i++) {
             spriteXPositions[i] = secondaryOamMemory[i * 4 + 3];
             if (spriteXPositions[i] == -1) {
                 spritePatternLowByteShiftRegisters[i] = 0;
