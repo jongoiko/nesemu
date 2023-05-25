@@ -93,7 +93,8 @@ public class MainFrame extends javax.swing.JFrame {
             boolean sendResetMessage = false;
             while (!Thread.currentThread().isInterrupted()) {
                 if (shouldSwitchCartridge.compareAndSet(true, false)) {
-                    if (loadROM(false) && netplaySocket != null)
+                    boolean switched = loadROM(false);
+                    if (switched && netplaySocket != null)
                         shouldSendSerializedNES.set(true);
                 }
                 if (shouldSendSerializedNES.compareAndSet(true, false))
