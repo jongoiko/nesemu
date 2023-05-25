@@ -202,26 +202,44 @@ public class MainFrame extends javax.swing.JFrame {
 
     private class NetplayServerWaitForConnectionThread extends Thread {
         private final int portNumber;
+        private ServerSocket serverSocket;
 
         public NetplayServerWaitForConnectionThread(int portNumber) {
             this.portNumber = portNumber;
         }
 
         @Override
+        public void interrupt() {
+            attemptClosingServerSocket();
+            super.interrupt();
+        }
+
+        @Override
         public void run() {
-            statusBarLabel.setText("Netplay server started; waiting for connections");
-            final ServerSocket serverSocket;
             try {
                 serverSocket = new ServerSocket(portNumber);
+                statusBarLabel.setText("Netplay server started; waiting for connections");
                 netplaySocket = serverSocket.accept();
                 statusBarLabel.setText("Accepted connection from "
                     + netplaySocket.getInetAddress() + ":" + netplaySocket.getPort());
                 isNetplayServer = true;
                 NESRunnerThread.shouldSendSerializedNES.set(true);
             } catch (IOException ex) {
-                JOptionPane.showMessageDialog(null, "Could not start netplay server " +
-                        "(" + ex.getLocalizedMessage() + ").", "Netplay server error",
-                        JOptionPane.ERROR_MESSAGE);
+                if (!isInterrupted())
+                    JOptionPane.showMessageDialog(null, "Could not start netplay server " +
+                            "(" + ex.getLocalizedMessage() + ").", "Netplay server error",
+                            JOptionPane.ERROR_MESSAGE);
+            } finally {
+                attemptClosingServerSocket();
+            }
+        }
+
+        private void attemptClosingServerSocket() {
+            try {
+                if (serverSocket != null)
+                    serverSocket.close();
+            } catch (IOException ex) {
+
             }
         }
     }
@@ -489,12 +507,11 @@ public class MainFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_startServerMenuItemActionPerformed
 
     private void stopServerMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_stopServerMenuItemActionPerformed
-        if (netplayServerThread == null || netplaySocket == null)
+        if (netplayServerThread == null && netplaySocket == null)
             return;
         statusBarLabel.setText("Netplay server stopped");
-        if (netplayServerThread != null && netplayServerThread.isAlive()) {
+        if (netplayServerThread != null && netplayServerThread.isAlive())
             netplayServerThread.interrupt();
-        }
         if (netplaySocket != null)
             try {
                 netplaySocket.close();
