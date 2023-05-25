@@ -52,6 +52,7 @@ public class MainFrame extends javax.swing.JFrame {
         nes = null;
         screenPanel = new ScreenPanel();
         initComponents();
+        setAutoRequestFocus(true);
         screenPanel.init();
     }
 
@@ -630,11 +631,8 @@ public class MainFrame extends javax.swing.JFrame {
         MainFrame mf = new MainFrame();
         mf.setLocationRelativeTo(null);
         mf.setVisible(true);
-
         mf.getContentPane().setBackground(new Color(60, 63, 65));
-
         mf.toFront();
-        mf.requestFocus();
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
