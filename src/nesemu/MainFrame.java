@@ -201,7 +201,7 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     private class NetplayServerWaitForConnectionThread extends Thread {
-        int portNumber;
+        private final int portNumber;
 
         public NetplayServerWaitForConnectionThread(int portNumber) {
             this.portNumber = portNumber;
