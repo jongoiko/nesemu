@@ -36,8 +36,9 @@ public class NES implements Serializable {
 
     public void exchangeCartridge(String cartridgeFilePath)
             throws IOException, UnsupportedMapperException {
+        Cartridge newCartridge = Cartridge.fromINESFile(cartridgeFilePath);
         addressSpace.removeDevice(cartridge);
-        cartridge = Cartridge.fromINESFile(cartridgeFilePath);
+        cartridge = newCartridge;
         addressSpace.addDevice(cartridge);
         ppu.cartridge = cartridge;
         reset();
