@@ -266,6 +266,7 @@ public class MainFrame extends javax.swing.JFrame {
         disconnectFromServerMenuItem = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("NESemu");
         setAutoRequestFocus(false);
         setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         setFont(new java.awt.Font("Fira Code SemiBold", 0, 10)); // NOI18N
