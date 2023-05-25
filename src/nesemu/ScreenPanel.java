@@ -14,6 +14,8 @@ public class ScreenPanel extends javax.swing.JPanel {
 
     @Override
     public void paint(Graphics g) {
+        // The image is scaled to center it in the panel while maintaining its
+        // aspect ratio.
         int width = getWidth(), height = getHeight();
         double ratio = Math.min((double)width / SCREEN_WIDTH,
                 (double)height / SCREEN_HEIGHT);
