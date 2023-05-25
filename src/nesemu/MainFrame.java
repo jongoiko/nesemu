@@ -39,7 +39,7 @@ public class MainFrame extends javax.swing.JFrame {
 
     private Socket netplaySocket;
     private boolean isNetplayServer;
-    private NetplayServerThread netplayServerThread;
+    private NetplayServerWaitForConnectionThread netplayServerThread;
 
     private final ScreenPanel screenPanel;
 
@@ -200,10 +200,10 @@ public class MainFrame extends javax.swing.JFrame {
         }
     }
 
-    private class NetplayServerThread extends Thread {
+    private class NetplayServerWaitForConnectionThread extends Thread {
         int portNumber;
 
-        public NetplayServerThread(int portNumber) {
+        public NetplayServerWaitForConnectionThread(int portNumber) {
             this.portNumber = portNumber;
         }
 
@@ -483,7 +483,8 @@ public class MainFrame extends javax.swing.JFrame {
                 JOptionPane.QUESTION_MESSAGE);
         if (result != JOptionPane.OK_OPTION)
             return;
-        netplayServerThread = new NetplayServerThread(inputPanel.getPortNumber());
+        netplayServerThread =
+                new NetplayServerWaitForConnectionThread(inputPanel.getPortNumber());
         netplayServerThread.start();
     }//GEN-LAST:event_startServerMenuItemActionPerformed
 
