@@ -13,7 +13,7 @@ public class Controller extends MemoryMapped {
 
     /* To allow communicating button presses to the emulator on a frame-by-frame
      * basis, isPressedLocally is copied to the appropriate field (player 1 or
-     * player two) with commitButtonStates.
+     * player two) in commitButtonStates().
     */
     public enum Button {
         BUTTON_A(KeyEvent.VK_X, (byte)1),
