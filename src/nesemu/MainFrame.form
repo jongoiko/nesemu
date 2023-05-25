@@ -83,7 +83,7 @@
             <Property name="text" type="java.lang.String" value="Netplay"/>
           </Properties>
           <SubComponents>
-            <Menu class="javax.swing.JMenu" name="jMenu5">
+            <Menu class="javax.swing.JMenu" name="localServerMenu">
               <Properties>
                 <Property name="text" type="java.lang.String" value="Local server"/>
                 <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">

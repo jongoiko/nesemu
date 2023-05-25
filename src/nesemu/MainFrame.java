@@ -259,7 +259,7 @@ public class MainFrame extends javax.swing.JFrame {
         emulatorHelpMenuItem = new javax.swing.JMenuItem();
         netplayHelpMenuItem = new javax.swing.JMenuItem();
         netplayMenu = new javax.swing.JMenu();
-        jMenu5 = new javax.swing.JMenu();
+        localServerMenu = new javax.swing.JMenu();
         startServerMenuItem = new javax.swing.JMenuItem();
         stopServerMenuItem = new javax.swing.JMenuItem();
         connectToServerMenuItem = new javax.swing.JMenuItem();
@@ -350,8 +350,8 @@ public class MainFrame extends javax.swing.JFrame {
 
         netplayMenu.setText("Netplay");
 
-        jMenu5.setText("Local server");
-        jMenu5.setFont(new java.awt.Font("Fira Code", 0, 13)); // NOI18N
+        localServerMenu.setText("Local server");
+        localServerMenu.setFont(new java.awt.Font("Fira Code", 0, 13)); // NOI18N
 
         startServerMenuItem.setFont(new java.awt.Font("Fira Code", 0, 13)); // NOI18N
         startServerMenuItem.setText("Start");
@@ -360,7 +360,7 @@ public class MainFrame extends javax.swing.JFrame {
                 startServerMenuItemActionPerformed(evt);
             }
         });
-        jMenu5.add(startServerMenuItem);
+        localServerMenu.add(startServerMenuItem);
 
         stopServerMenuItem.setFont(new java.awt.Font("Fira Code", 0, 13)); // NOI18N
         stopServerMenuItem.setText("Stop");
@@ -369,9 +369,9 @@ public class MainFrame extends javax.swing.JFrame {
                 stopServerMenuItemActionPerformed(evt);
             }
         });
-        jMenu5.add(stopServerMenuItem);
+        localServerMenu.add(stopServerMenuItem);
 
-        netplayMenu.add(jMenu5);
+        netplayMenu.add(localServerMenu);
 
         connectToServerMenuItem.setFont(new java.awt.Font("Fira Code", 0, 13)); // NOI18N
         connectToServerMenuItem.setText("Connect to server");
@@ -642,9 +642,9 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JMenuItem emulatorHelpMenuItem;
     private javax.swing.JMenuItem exitMenuItem;
     private javax.swing.JMenu helpMenu;
-    private javax.swing.JMenu jMenu5;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JMenuItem loadROMMenuItem;
+    private javax.swing.JMenu localServerMenu;
     private javax.swing.JMenuBar menuBar;
     private javax.swing.JMenuItem netplayHelpMenuItem;
     private javax.swing.JMenu netplayMenu;
