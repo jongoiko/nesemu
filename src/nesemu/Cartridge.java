@@ -15,7 +15,7 @@ import java.io.IOException;
  * effectively extending the system's available memory.
  *
  * For a more in-depth explanation (as well as a listing of known mappers) see
- * https://www.nesdev.org/wiki/Mapper.
+ * https://www.nesdev.org/wiki/Mapper
  */
 
 public abstract class Cartridge extends MemoryMapped {
