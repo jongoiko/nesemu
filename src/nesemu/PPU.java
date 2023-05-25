@@ -185,17 +185,18 @@ public class PPU extends MemoryMapped {
             }
             if (column == 256)
                 increaseVerticalVramAddress();
-            if (column == 257) {
+            else if (column == 257) {
                 copyVramAddressHorizontalPosition();
                 readSpriteData();
             }
-            if (scanline >= 0 && column >= 1 && column < 256) {
+            else if (scanline >= 0 && column >= 1 && column < 256) {
                 if (column == 1)
                     clearSecondaryOam();
                 else if (column == 65)
                     evaluateSprites();
                 Integer backgroundColorCode = null, spriteColorCode = null;
-                if (regPPUMASK.showBackground && (column > 8 || regPPUMASK.showBackgroundLeft))
+                if (regPPUMASK.showBackground &&
+                        (column > 8 || regPPUMASK.showBackgroundLeft))
                     backgroundColorCode = getBackgroundPixelColorCode();
                 if (scanline > 0 && regPPUMASK.showSprites &&
                         (column > 8 || regPPUMASK.showSpritesLeft))
@@ -303,7 +304,8 @@ public class PPU extends MemoryMapped {
 
     private void readBackgroundNametableByte() {
         int tileNumberAddress = vramAddress & 0xFFF;
-        nextTileNumber = Byte.toUnsignedInt(readByteFromNametableMemory(tileNumberAddress));
+        nextTileNumber =
+                Byte.toUnsignedInt(readByteFromNametableMemory(tileNumberAddress));
     }
 
     private void readBackgroundAttribute() {
@@ -383,9 +385,11 @@ public class PPU extends MemoryMapped {
 
     private Integer getBackgroundPixelColorCode() {
         int pixel = 0x8000 >>> fineXScroll;
-        backgroundColorNumber = ((backgroundPatternLowByteShiftRegister & pixel) != 0 ? 1 : 0) +
+        backgroundColorNumber =
+                ((backgroundPatternLowByteShiftRegister & pixel) != 0 ? 1 : 0) +
                 2 * ((backgroundPatternHighByteShiftRegister & pixel) != 0 ? 1 : 0);
-        int attribute = ((backgroundAttributeLowByteShiftRegister & pixel) != 0 ? 1 : 0) +
+        int attribute =
+                ((backgroundAttributeLowByteShiftRegister & pixel) != 0 ? 1 : 0) +
                 2 * ((backgroundAttributeHighByteShiftRegister & pixel) != 0 ? 1 : 0);
         int colorCode = Byte.toUnsignedInt(
                 readByteFromPaletteMemory(attribute * 4 + backgroundColorNumber, true));
