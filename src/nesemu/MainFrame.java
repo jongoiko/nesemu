@@ -494,6 +494,42 @@ public class MainFrame extends javax.swing.JFrame {
         return false;
     }
 
+    private class HostnameAndPortInputPanel extends JPanel {
+        private final JTextField hostnameField;
+        private final JFormattedTextField portNumberField;
+
+        public HostnameAndPortInputPanel(boolean portNumberOnly) {
+            NumberFormat format = NumberFormat.getInstance();
+            format.setGroupingUsed(false);
+            NumberFormatter formatter = new NumberFormatter(format);
+            formatter.setMinimum(0);
+            formatter.setMaximum(Integer.MAX_VALUE);
+            formatter.setValueClass(Integer.class);
+            formatter.setAllowsInvalid(true);
+            GridLayout layout = new GridLayout(portNumberOnly ? 1 : 2, 2);
+            layout.setHgap(20);
+            layout.setVgap(10);
+            setLayout(layout);
+            hostnameField = new JTextField(NETPLAY_DEFAULT_HOST);
+            if (!portNumberOnly) {
+                add(new JLabel("Server's hostname or IP address:"));
+                add(hostnameField);
+            }
+            add(new JLabel("Port number:"));
+            portNumberField = new JFormattedTextField(formatter);
+            portNumberField.setValue(NETPLAY_DEFAULT_PORT);
+            add(portNumberField);
+        }
+
+        public String getHostname() {
+            return hostnameField.getText();
+        }
+
+        public int getPortNumber() {
+            return Integer.parseInt(portNumberField.getText());
+        }
+    }
+
     private void startServerMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startServerMenuItemActionPerformed
         HostnameAndPortInputPanel inputPanel = new HostnameAndPortInputPanel(true);
         int result = JOptionPane.showConfirmDialog(null, inputPanel,
@@ -521,42 +557,6 @@ public class MainFrame extends javax.swing.JFrame {
                         .log(Level.SEVERE, null, ex);
             }
     }//GEN-LAST:event_stopServerMenuItemActionPerformed
-
-    private class HostnameAndPortInputPanel extends JPanel {
-        private final JTextField hostnameField;
-        private final JFormattedTextField portNumberField;
-
-        public HostnameAndPortInputPanel(boolean portNumberOnly) {
-            NumberFormat format = NumberFormat.getInstance();
-            format.setGroupingUsed(false);
-            NumberFormatter formatter = new NumberFormatter(format);
-            formatter.setMinimum(0);
-            formatter.setMaximum(Integer.MAX_VALUE);
-            formatter.setValueClass(Integer.class);
-            formatter.setAllowsInvalid(true);
-            GridLayout layout = new GridLayout(portNumberOnly ? 1 : 2, 2);
-            layout.setHgap(20);
-            layout.setVgap(10);
-            setLayout(layout);
-            add(new JLabel("Port number:"));
-            portNumberField = new JFormattedTextField(formatter);
-            portNumberField.setValue(NETPLAY_DEFAULT_PORT);
-            add(portNumberField);
-            hostnameField = new JTextField(NETPLAY_DEFAULT_HOST);
-            if (portNumberOnly)
-                return;
-            add(new JLabel("Server's hostname or IP address:"));
-            add(hostnameField);
-        }
-
-        public String getHostname() {
-            return hostnameField.getText();
-        }
-
-        public int getPortNumber() {
-            return Integer.parseInt(portNumberField.getText());
-        }
-    }
 
     private void connectToServerMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectToServerMenuItemActionPerformed
         HostnameAndPortInputPanel inputPanel = new HostnameAndPortInputPanel(false);
