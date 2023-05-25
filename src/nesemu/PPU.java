@@ -43,6 +43,8 @@ public class PPU extends MemoryMapped {
     private int frameCount;
     public boolean isFrameReady;
 
+    // The following four registers enable scrolling, which is explained in
+    // detail at https://www.nesdev.org/wiki/PPU_scrolling
     private short vramAddress;
     private short tempVramAddress;
     private int fineXScroll;
