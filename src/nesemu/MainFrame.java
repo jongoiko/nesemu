@@ -582,7 +582,7 @@ public class MainFrame extends javax.swing.JFrame {
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(null, "Could not connect to server " +
                     "(" + ex.getLocalizedMessage() + ").", "Connection error",
-                        JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_connectToServerMenuItemActionPerformed
 
