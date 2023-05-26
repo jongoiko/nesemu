@@ -16,7 +16,9 @@ $ ant
 
 The resulting `.jar` will be stored in the `build/` directory.
 
-**Note:** the project has developed and tested with JDK 20, but its compatibility with older JDK versions has not been thoroughly verified. 
+**Note 1:** the project has been developed and tested with JDK 20, but its compatibility with older JDK versions has not been thoroughly verified.
+
+**Note 2:** [FlatLaf](https://github.com/JFormDesigner/FlatLaf) is used for the Swing GUI look and feel; its `.jar` is already included in the `lib/` directory.
 
 ## Usage
 
