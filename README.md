@@ -4,7 +4,7 @@ A NES emulator written from scratch in Java, with basic netplay support.
 
 ![The emulator running Spacegulls](/screenshots/spacegulls.png?raw=true)
 
-_Game:_ [Spacegulls](https://forums.nesdev.org/viewtopic.php?t=22085)
+_Game:_ [Spacegulls](https://morphcatgames.itch.io/spacegulls)
 
 ## Installation and building
 
