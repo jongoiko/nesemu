@@ -533,25 +533,31 @@ public class PPU extends MemoryMapped {
             paletteMemory[address] = value;
     }
 
-    private byte readByteFromNametableMemory(int address) {
-        int nametableNumber;
+    private int getNametableNumberFromAddress(int address) {
         switch (cartridge.mirroring) {
-            case HORIZONTAL -> nametableNumber = (address & 0x800) >>> 11;
-            case VERTICAL ->   nametableNumber = (address & 0x400) >>> 10;
-            default ->         nametableNumber = (address & 0xC00) >>> 10;
+            case SINGLE_SCREEN_LOWER -> {
+                return 0;
+            }
+            case SINGLE_SCREEN_UPPER -> {
+                return 1;
+            }
+            case HORIZONTAL -> {
+                return (address & 0x800) >>> 11;
+            }
+            case VERTICAL -> {
+                return (address & 0x400) >>> 10;
+            }
         }
+        return (address & 0xC00) >>> 10;
+    }
+
+    private byte readByteFromNametableMemory(int address) {
+        int nametableNumber = getNametableNumberFromAddress(address);
         return nametableMemory[nametableNumber][address & 0x3FF];
     }
 
     private void writeByteToNametableMemory(int address, byte value) {
-        int nametableNumber;
-        switch (cartridge.mirroring) {
-            case SINGLE_SCREEN_LOWER -> nametableNumber = 0;
-            case SINGLE_SCREEN_UPPER -> nametableNumber = 1;
-            case HORIZONTAL -> nametableNumber = (address & 0x800) >>> 11;
-            case VERTICAL ->   nametableNumber = (address & 0x400) >>> 10;
-            default ->         nametableNumber = (address & 0xC00) >>> 10;
-        }
+        int nametableNumber = getNametableNumberFromAddress(address);
         nametableMemory[nametableNumber][address & 0x3FF] = value;
     }
 
