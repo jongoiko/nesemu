@@ -152,18 +152,14 @@ public abstract class Cartridge extends MemoryMapped {
             Mirroring mirroring, boolean hasPrgRAM, boolean hasChrRAM, int mapperNumber)
             throws UnsupportedMapperException {
         switch (mapperNumber) {
-            case 0 -> {
+            case 0:
                 return new Mapper000Cartridge(prgROM, chrROM, mirroring, hasPrgRAM, hasChrRAM);
-            }
-            case 1 -> {
+            case 1:
                 return new Mapper001Cartridge(prgROM, chrROM, mirroring, hasPrgRAM, hasChrRAM);
-            }
-            case 2 -> {
+            case 2:
                 return new Mapper002Cartridge(prgROM, chrROM, mirroring, hasPrgRAM, hasChrRAM);
-            }
-            case 3 -> {
+            case 3:
                 return new Mapper003Cartridge(prgROM, chrROM, mirroring, hasPrgRAM, hasChrRAM);
-            }
         }
         throw new UnsupportedMapperException(mapperNumber);
     }

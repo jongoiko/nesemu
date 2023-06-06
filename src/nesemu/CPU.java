@@ -262,15 +262,15 @@ public class CPU extends MemoryMapped {
         return address;
     }
 
+    private interface SerializableRunnable extends Serializable, Runnable {
+
+    }
+
     private class Instruction implements Serializable {
         final String name;
         final AddressingMode addressingMode;
         final int cycles;
         final SerializableRunnable operation;
-
-        interface SerializableRunnable extends Serializable, Runnable {
-
-        }
 
         public Instruction(String name, AddressingMode addressingMode,
                 int cycles, SerializableRunnable operation) {

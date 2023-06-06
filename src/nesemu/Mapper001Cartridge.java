@@ -41,12 +41,18 @@ public class Mapper001Cartridge extends Cartridge {
     public byte readPrgROMByte(short address) {
         int mappedAddress = Short.toUnsignedInt(address), baseAddress = 0;
         switch (prgBankMode) {
-            case FIX_16KB_FIRST_HALF -> baseAddress = mappedAddress >= 0xC000 ?
-                    prgROMBankSelect * PRG_ROM_BANK_SIZE : 0;
-            case FIX_16KB_SECOND_HALF -> baseAddress = (mappedAddress >= 0xC000 ?
+            case FIX_16KB_FIRST_HALF:
+                baseAddress = mappedAddress >= 0xC000 ?
+                        prgROMBankSelect * PRG_ROM_BANK_SIZE : 0;
+                break;
+            case FIX_16KB_SECOND_HALF:
+                baseAddress = (mappedAddress >= 0xC000 ?
                     0xF : prgROMBankSelect) * PRG_ROM_BANK_SIZE;
-            case SWITCH_32KB -> baseAddress = (prgROMBankSelect >>> 1)
+                break;
+            case SWITCH_32KB:
+                baseAddress = (prgROMBankSelect >>> 1)
                     * 2 * PRG_ROM_BANK_SIZE;
+                break;
         }
         if (upper256KBank)
             baseAddress += 262144;
@@ -106,31 +112,34 @@ public class Mapper001Cartridge extends Cartridge {
 
     private void updateBanks(int registerSelectBits) {
         switch (registerSelectBits) {
-            case 0 -> updateBankingModes();
-            case 1 -> {
+            case 0:
+                updateBankingModes();
+                break;
+            case 1:
                 chrLowerBankSelect = shiftRegister;
                 updateSpecialVariantBanks();
-            }
-            case 2 -> {
+                break;
+            case 2:
                 chrUpperBankSelect = shiftRegister;
                 if (chrBankMode != ChrBankMode.SWITCH_8KB)
                     updateSpecialVariantBanks();
-            }
-            default -> prgROMBankSelect = shiftRegister & 0xF;
+                break;
+            default:
+                prgROMBankSelect = shiftRegister & 0xF;
         }
     }
 
     private void updateBankingModes() {
         switch (shiftRegister & 3) {
-            case 0 -> mirroring = Mirroring.SINGLE_SCREEN_LOWER;
-            case 1 -> mirroring = Mirroring.SINGLE_SCREEN_UPPER;
-            case 2 -> mirroring = Mirroring.VERTICAL;
-            case 3 -> mirroring = Mirroring.HORIZONTAL;
+            case 0: mirroring = Mirroring.SINGLE_SCREEN_LOWER; break;
+            case 1: mirroring = Mirroring.SINGLE_SCREEN_UPPER; break;
+            case 2: mirroring = Mirroring.VERTICAL; break;
+            case 3: mirroring = Mirroring.HORIZONTAL; break;
         }
         switch ((shiftRegister & 0xC) >>> 2) {
-            case 2 ->  prgBankMode = PrgBankMode.FIX_16KB_FIRST_HALF;
-            case 3 ->  prgBankMode = PrgBankMode.FIX_16KB_SECOND_HALF;
-            default -> prgBankMode = PrgBankMode.SWITCH_32KB;
+            case 2:  prgBankMode = PrgBankMode.FIX_16KB_FIRST_HALF; break;
+            case 3:  prgBankMode = PrgBankMode.FIX_16KB_SECOND_HALF; break;
+            default: prgBankMode = PrgBankMode.SWITCH_32KB; break;
         }
         chrBankMode = (shiftRegister & 0x10) != 0 ?
                 ChrBankMode.SWITCH_TWO_4KB : ChrBankMode.SWITCH_8KB;

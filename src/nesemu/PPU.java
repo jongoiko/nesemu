@@ -175,14 +175,14 @@ public class PPU extends MemoryMapped {
             if ((column >= 1 && column <= 257) || (column >= 321 && column <= 336)) {
                 shiftBackgroundShiftRegisters();
                 switch ((column - 1) % 8) {
-                    case 0 -> {
+                    case 0:
                         loadLatchesIntoBackgroundShiftRegisters();
                         readBackgroundNametableByte();
-                    }
-                    case 2 -> readBackgroundAttribute();
-                    case 4 -> readBackgroundPatternLowByte();
-                    case 6 -> readBackgroundPatternHighByte();
-                    case 7 -> increaseHorizontalVramAddress();
+                        break;
+                    case 2: readBackgroundAttribute(); break;
+                    case 4: readBackgroundPatternLowByte(); break;
+                    case 6: readBackgroundPatternHighByte(); break;
+                    case 7: increaseHorizontalVramAddress(); break;
                 }
             }
             if (column == 256)
@@ -358,12 +358,15 @@ public class PPU extends MemoryMapped {
                 vramAddress &= ~0x7000;
                 int coarseY = (vramAddress & 0x3E0) >>> 5;
                 switch (coarseY) {
-                    case 29 -> {
+                    case 29:
                         coarseY = 0;
                         vramAddress ^= 0x800;
-                    }
-                    case 31 -> coarseY = 0;
-                    default -> coarseY++;
+                        break;
+                    case 31:
+                        coarseY = 0;
+                        break;
+                    default:
+                        coarseY++;
                 }
                 vramAddress &= ~0x3E0;
                 vramAddress |= coarseY << 5;
@@ -535,18 +538,10 @@ public class PPU extends MemoryMapped {
 
     private int getNametableNumberFromAddress(int address) {
         switch (cartridge.mirroring) {
-            case SINGLE_SCREEN_LOWER -> {
-                return 0;
-            }
-            case SINGLE_SCREEN_UPPER -> {
-                return 1;
-            }
-            case HORIZONTAL -> {
-                return (address & 0x800) >>> 11;
-            }
-            case VERTICAL -> {
-                return (address & 0x400) >>> 10;
-            }
+            case SINGLE_SCREEN_LOWER: return 0;
+            case SINGLE_SCREEN_UPPER: return 1;
+            case HORIZONTAL:          return (address & 0x800) >>> 11;
+            case VERTICAL:            return (address & 0x400) >>> 10;
         }
         return (address & 0xC00) >>> 10;
     }
@@ -591,40 +586,43 @@ public class PPU extends MemoryMapped {
 
     @Override
     public byte readByteFromDevice(short address) {
+        byte value = 0;
         switch (address & 7) {
-            case 2 -> {
-                byte value = regPPUSTATUS.toByte();
+            case 2:
+                value = regPPUSTATUS.toByte();
                 firstByteWritten = false;
                 regPPUSTATUS.verticalBlank = false;
-                return value;
-            }
-            case 4 -> {
-                return oamMemory[Byte.toUnsignedInt(regOAMADDR)];
-            }
-            case 7 -> {
-                byte value = readByteFromVramAddress();
+                break;
+            case 4:
+                value = oamMemory[Byte.toUnsignedInt(regOAMADDR)];
+                break;
+            case 7:
+                value = readByteFromVramAddress();
                 vramAddress += regPPUCTRL.incrementVramAddressByWholeRow ? 32 : 1;
-                return value;
-            }
+                break;
         }
-        return 0;
+        return value;
     }
 
     @Override
     public void writeByteToDevice(short address, byte value) {
         switch (address & 7) {
-            case 0 -> {
+            case 0:
                 tempVramAddress &= ~0xC00;
                 tempVramAddress |= (value & 3) << 10;
                 regPPUCTRL.update(value);
-            }
-            case 1 -> regPPUMASK.update(value);
-            case 3 -> regOAMADDR = value;
-            case 4 -> {
+                break;
+            case 1:
+                regPPUMASK.update(value);
+                break;
+            case 3:
+                regOAMADDR = value;
+                break;
+            case 4:
                 oamMemory[Byte.toUnsignedInt(regOAMADDR)] = value;
                 regOAMADDR++;
-            }
-            case 5 -> {
+                break;
+            case 5:
                 if (firstByteWritten) {
                     tempVramAddress &= ~0x73E0;
                     tempVramAddress |= (value & 7) << 12;
@@ -635,8 +633,8 @@ public class PPU extends MemoryMapped {
                     fineXScroll = value & 7;
                 }
                 firstByteWritten = !firstByteWritten;
-            }
-            case 6 -> {
+                break;
+            case 6:
                 if (firstByteWritten) {
                     tempVramAddress &= ~0xFF;
                     tempVramAddress |= Byte.toUnsignedInt(value);
@@ -646,11 +644,11 @@ public class PPU extends MemoryMapped {
                     tempVramAddress |= (value & 0x3F) << 8;
                 }
                 firstByteWritten = !firstByteWritten;
-            }
-            case 7 -> {
+                break;
+            case 7:
                 writeByteAtVramAddress(value);
                 vramAddress += regPPUCTRL.incrementVramAddressByWholeRow ? 32 : 1;
-            }
+                break;
         }
     }
 }
