@@ -6,6 +6,8 @@ A NES emulator written from scratch in Java, with basic netplay support.
 
 _Game:_ [Spacegulls](https://morphcatgames.itch.io/spacegulls)
 
+Implemented iNES mappers: [000](https://www.nesdev.org/wiki/INES_Mapper_000), [001](https://www.nesdev.org/wiki/INES_Mapper_001), [002](https://www.nesdev.org/wiki/INES_Mapper_002), [003](https://www.nesdev.org/wiki/INES_Mapper_003).
+
 ## Installation and building
 
 Build the project from its root directory using [ant](https://ant.apache.org/):
